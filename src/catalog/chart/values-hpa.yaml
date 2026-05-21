@@ -1,69 +1,8 @@
 # Deployed the catalog service with HorizontalPodAutoscaler enabled.
 # Configured min/max replicas and CPU threshold to validate autoscaling behavior under load.
 
-replicaCount: 1
-
-image:
-  repository: public.ecr.aws/aws-containers/retail-store-sample-catalog
-  pullPolicy: IfNotPresent
-  tag: ""
-
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
-
-podAnnotations: {}
-
-podSecurityContext:
-  fsGroup: 1000
-
-securityContext:
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  runAsUser: 1000
-
-service:
-  type: ClusterIP
-  port: 80
-
-resources:
-  limits:
-    memory: 256Mi
-  requests:
-    cpu: 256m
-    memory: 256Mi
-
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 5
   targetCPUUtilizationPercentage: 70
-
-metrics:
-  enabled: true
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/path: "/metrics"
-
-configMap:
-  create: true
-  name:
-
-app:
-  persistence:
-    provider: in-memory
-    endpoint: ""
-    database: "catalog"
-    secret:
-      create: true
-      name: catalog-db
-      username: catalog
-      password: ""
-
-mysql:
-  create: false

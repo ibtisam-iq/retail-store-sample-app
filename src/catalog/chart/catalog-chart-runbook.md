@@ -1,6 +1,8 @@
 # Catalog Chart — Helm Practice Runbook
 
-This repository was forked from the [AWS Retail Store Sample App](https://github.com/aws-containers/retail-store-sample-app). The `src/catalog/chart` directory contained a production-grade Helm chart for the catalog microservice. Multiple `values.yaml` variations were authored and deployed to explore different persistence strategies, scaling configurations, and availability patterns.
+This repository was forked from the [AWS Retail Store Sample App](https://github.com/aws-containers/retail-store-sample-app). The `src/catalog/chart` directory contained a production-grade Helm chart for the catalog microservice. Multiple overlay values files were authored and deployed on top of the base `values.yaml` to explore different persistence strategies, scaling configurations, and availability patterns.
+
+> **Deployment pattern:** Every `helm` command passes `values.yaml` first (base) and the scenario file second (patch). Helm deep-merges both; the patch file overrides only the keys it declares.
 
 ---
 
@@ -18,15 +20,15 @@ This repository was forked from the [AWS Retail Store Sample App](https://github
 
 ## Values Files — Scenario Matrix
 
-| File | Persistence | MySQL Pod | PVC | Key Toggle |
+| File | Persistence | MySQL Pod | PVC | Keys Overridden |
 |---|---|---|---|---|
-| `values.yaml` | `in-memory` | ✗ | ✗ | Upstream default — untouched |
-| `values-in-memory.yaml` | `in-memory` | ✗ | ✗ | Clean baseline, confirmed chart renders |
-| `values-mysql-ephemeral.yaml` | `mysql` | ✓ | ✗ | `mysql.create: true`, ephemeral storage |
-| `values-mysql-pvc.yaml` | `mysql` | ✓ | ✓ | `mysql.persistentVolume.enabled: true` |
-| `values-external-mysql.yaml` | `mysql` | ✗ | ✗ | `app.persistence.endpoint` set to external host |
-| `values-hpa.yaml` | `in-memory` | ✗ | ✗ | `autoscaling.enabled: true`, min 2 / max 5 replicas |
-| `values-pdb.yaml` | `in-memory` | ✗ | ✗ | `podDisruptionBudget.enabled: true`, minAvailable: 2 |
+| `values.yaml` | `in-memory` | ✗ | ✗ | Upstream default — untouched base |
+| `values-in-memory.yaml` | `in-memory` | ✗ | ✗ | `app.persistence.provider` (explicit confirmation) |
+| `values-mysql-ephemeral.yaml` | `mysql` | ✓ | ✗ | `app.persistence.provider`, `mysql.create` |
+| `values-mysql-pvc.yaml` | `mysql` | ✓ | ✓ | `app.persistence.provider`, `mysql.create`, `mysql.persistentVolume.enabled` |
+| `values-external-mysql.yaml` | `mysql` | ✗ | ✗ | `app.persistence.endpoint`, `mysql.create: false` |
+| `values-hpa.yaml` | `in-memory` | ✗ | ✗ | `autoscaling.enabled`, `minReplicas`, `maxReplicas`, `targetCPUUtilizationPercentage` |
+| `values-pdb.yaml` | `in-memory` | ✗ | ✗ | `replicaCount`, `podDisruptionBudget.enabled`, `minAvailable` |
 
 ---
 
@@ -35,25 +37,27 @@ This repository was forked from the [AWS Retail Store Sample App](https://github
 ### Template Validation (all scenarios)
 
 ```bash
-# Dry-run render to validate templating before any cluster deployment
-helm template catalog src/catalog/chart/ -f src/catalog/chart/<values-file>.yaml
+helm template catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
+  -f src/catalog/chart/<values-file>.yaml
 ```
 
 ### Scenario 1 — In-Memory Baseline
 
 ```bash
 helm install catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-in-memory.yaml \
   --namespace catalog --create-namespace
 
 kubectl get pods -n catalog
-kubectl logs -n catalog -l app.kubernetes.io/name=retail-store-sample-catalog-chart
 ```
 
 ### Scenario 2 — In-Cluster MySQL, Ephemeral Storage
 
 ```bash
 helm install catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-mysql-ephemeral.yaml \
   --namespace catalog --create-namespace
 
@@ -65,6 +69,7 @@ kubectl exec -n catalog -it <mysql-pod> -- mysql -u catalog -pcatalog123 catalog
 
 ```bash
 helm install catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-mysql-pvc.yaml \
   --namespace catalog --create-namespace
 
@@ -77,6 +82,7 @@ kubectl get pods -n catalog
 ```bash
 # Replace <EXTERNAL_MYSQL_HOST> and <REPLACE_ME> in the values file before running
 helm install catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-external-mysql.yaml \
   --namespace catalog --create-namespace
 
@@ -87,6 +93,7 @@ kubectl describe pod -n catalog -l app.kubernetes.io/name=retail-store-sample-ca
 
 ```bash
 helm install catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-hpa.yaml \
   --namespace catalog --create-namespace
 
@@ -98,6 +105,7 @@ kubectl describe hpa -n catalog
 
 ```bash
 helm install catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-pdb.yaml \
   --namespace catalog --create-namespace
 
@@ -108,8 +116,8 @@ kubectl describe pdb -n catalog
 ### Upgrade Pattern
 
 ```bash
-# Applied to any running release after editing a values file
 helm upgrade catalog src/catalog/chart/ \
+  -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/<values-file>.yaml \
   --namespace catalog
 

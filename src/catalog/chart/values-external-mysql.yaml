@@ -1,62 +1,11 @@
 # Deployed the catalog service pointing to an externally managed MySQL instance.
 # Set mysql.create to false and provided a custom endpoint — no in-cluster DB pod created.
 
-replicaCount: 1
-
-image:
-  repository: public.ecr.aws/aws-containers/retail-store-sample-catalog
-  pullPolicy: IfNotPresent
-  tag: ""
-
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
-
-podAnnotations: {}
-
-podSecurityContext:
-  fsGroup: 1000
-
-securityContext:
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  runAsUser: 1000
-
-service:
-  type: ClusterIP
-  port: 80
-
-resources:
-  limits:
-    memory: 256Mi
-  requests:
-    cpu: 256m
-    memory: 256Mi
-
-metrics:
-  enabled: true
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/path: "/metrics"
-
-configMap:
-  create: true
-  name:
-
 app:
   persistence:
     provider: mysql
     endpoint: "<EXTERNAL_MYSQL_HOST>:3306"
-    database: "catalog"
     secret:
-      create: true
-      name: catalog-db
-      username: catalog
       password: "<REPLACE_ME>"
 
 mysql:
