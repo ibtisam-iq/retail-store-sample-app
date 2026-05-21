@@ -1,0 +1,15 @@
+# Deployed the catalog service with in-cluster MySQL backed by a PVC on a bare-metal cluster.
+# Used local-path StorageClass provisioned by Rancher local-path-provisioner.
+
+app:
+  persistence:
+    provider: mysql
+    secret:
+      password: "catalog123"
+
+mysql:
+  create: true
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: "local-path"
