@@ -1,8 +1,0 @@
-# Deployed the catalog service with HorizontalPodAutoscaler enabled.
-# Configured min/max replicas and CPU threshold to validate autoscaling behavior under load.
-
-autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 70
