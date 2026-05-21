@@ -1,8 +1,0 @@
-# Deployed the catalog service with a PodDisruptionBudget to enforce high availability.
-# Set minAvailable to 2 so at least two replicas remained healthy during voluntary disruptions.
-
-replicaCount: 3
-
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 2
