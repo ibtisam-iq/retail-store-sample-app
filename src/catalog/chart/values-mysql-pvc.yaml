@@ -1,0 +1,81 @@
+# Deployed the catalog service with an in-cluster MySQL pod backed by a PersistentVolumeClaim.
+# Enabled persistent storage so catalog data survived pod restarts during testing.
+
+replicaCount: 1
+
+image:
+  repository: public.ecr.aws/aws-containers/retail-store-sample-catalog
+  pullPolicy: IfNotPresent
+  tag: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    memory: 256Mi
+  requests:
+    cpu: 256m
+    memory: 256Mi
+
+metrics:
+  enabled: true
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+
+configMap:
+  create: true
+  name:
+
+app:
+  persistence:
+    provider: mysql
+    endpoint: ""
+    database: "catalog"
+    secret:
+      create: true
+      name: catalog-db
+      username: catalog
+      password: "catalog123"
+
+mysql:
+  create: true
+
+  image:
+    repository: public.ecr.aws/docker/library/mysql
+    pullPolicy: IfNotPresent
+    tag: "8.0"
+
+  service:
+    type: ClusterIP
+    port: 3306
+
+  persistentVolume:
+    enabled: true
+    annotations: {}
+    labels: {}
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    storageClass: ""
