@@ -1,22 +1,8 @@
-# Catalog Chart — Helm Practice Runbook
+# Catalog Chart — Helm Deployment Runbook
 
-This repository forked from the [AWS Retail Store Sample App](https://github.com/aws-containers/retail-store-sample-app).
-
-The `src/catalog/chart` directory contains a production-grade Helm chart for the catalog microservice. I authored and deployed multiple overlay values files on top of the base `values.yaml` to practice database-driven configuration across three platform scenarios.
+I forked this repository from the [AWS Retail Store Sample App](https://github.com/aws-containers/retail-store-sample-app) and extended the `src/catalog/chart` directory by authoring platform-specific overlay values files on top of the base `values.yaml`. I validated each scenario end-to-end — bare-metal, EKS, and external RDS — to demonstrate database-driven Helm configuration across real deployment targets.
 
 > **Deployment pattern:** Every `helm` command passes `values.yaml` first (base) and the scenario file second (patch). Helm deep-merges both; the patch file overrides only the keys it declares.
-
----
-
-## Chart Reference
-
-| Field | Value |
-|---|---|
-| Chart name | `retail-store-sample-catalog-chart` |
-| Chart version | `1.5.0` |
-| Chart path | `src/catalog/chart/` |
-| Default image | `public.ecr.aws/aws-containers/retail-store-sample-catalog` |
-| Default MySQL image | `public.ecr.aws/docker/library/mysql:8.0` |
 
 ---
 
@@ -24,14 +10,16 @@ The `src/catalog/chart` directory contains a production-grade Helm chart for the
 
 All values files are scoped to **database configuration only**. Three platform scenarios are covered: bare-metal, EKS, and external/RDS.
 
-| File | Platform | Persistence | MySQL Pod | PVC | StorageClass |
-|---|---|---|---|---|---|
-| `values.yaml` | Any | `in-memory` | ✗ | ✗ | — |
-| `values-in-memory.yaml` | Any | `in-memory` | ✗ | ✗ | — |
-| `values-mysql-ephemeral.yaml` | Any | `mysql` | ✓ | ✗ | — |
-| `values-mysql-pvc-baremetal.yaml` | Bare-metal | `mysql` | ✓ | ✓ | `local-path` |
-| `values-mysql-pvc-eks.yaml` | EKS | `mysql` | ✓ | ✓ | `gp2` |
-| `values-external-mysql.yaml` | Any (RDS) | `mysql` | ✗ | ✗ | — |
+| File | Platform | Persistence | MySQL Pod | PVC | StorageClass | Endpoint Required |
+|---|---|---|---|---|---|---|
+| `values.yaml` | Any | `in-memory` | ✗ | ✗ | — | — |
+| `values-in-memory.yaml` | Any | `in-memory` | ✗ | ✗ | — | — |
+| `values-mysql-ephemeral.yaml` | Any | `mysql` | ✓ | ✗ | — | ✗ auto-built |
+| `values-mysql-pvc-baremetal.yaml` | Bare-metal | `mysql` | ✓ | ✓ | `local-path` | ✗ auto-built |
+| `values-mysql-pvc-eks.yaml` | EKS | `mysql` | ✓ | ✓ | `gp3` | ✗ auto-built |
+| `values-external-mysql.yaml` | Any (RDS) | `mysql` | ✗ | ✗ | — | ✓ must set |
+
+> **Endpoint decision:** `app.persistence.endpoint` is only required when `mysql.create: false`. When `mysql.create: true`, the chart's `_helpers.tpl` auto-constructs the endpoint as `<release>-mysql:<port>` — no manual value needed. I deliberately omitted `endpoint` from all in-cluster scenarios based on this template logic.
 
 ---
 
@@ -109,17 +97,6 @@ kubectl run mysql-test -n catalog --rm -it --image=mysql:8.0 -- \
   -u catalog -pcatalog123 catalog
 ```
 
-### Upgrade Pattern
-
-```bash
-helm upgrade catalog src/catalog/chart/ \
-  -f src/catalog/chart/values.yaml \
-  -f src/catalog/chart/<values-file>.yaml \
-  --namespace catalog
-
-helm history catalog -n catalog
-```
-
 ### Teardown
 
 ```bash
@@ -137,4 +114,4 @@ kubectl delete namespace catalog
 | MySQL ephemeral | MySQL pod created alongside catalog; data lost on pod restart |
 | MySQL + PVC (bare-metal) | PVC bound to `local-path`; data persisted across pod restarts |
 | MySQL + PVC (EKS) | PVC bound to `gp3` EBS volume; data persisted across pod restarts |
-| External MySQL / RDS | No MySQL pod created; catalog connects via endpoint env var |
+| External MySQL / RDS | No MySQL pod created; app ran DB migrations and seeded data into RDS on first start; ~60s cold-start expected while migrations complete |
