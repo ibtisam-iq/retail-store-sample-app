@@ -4,9 +4,9 @@
 app:
   persistence:
     provider: mysql
-    endpoint: "<EXTERNAL_MYSQL_HOST>:3306"
+    endpoint: "retail-store-sample-db.cri2is6gmf7z.us-east-1.rds.amazonaws.com:3306"
     secret:
-      password: "<REPLACE_ME>"
+      password: "catalog123"
 
 mysql:
   create: false

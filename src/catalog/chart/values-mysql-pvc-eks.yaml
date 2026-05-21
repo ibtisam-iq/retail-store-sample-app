@@ -1,6 +1,4 @@
 # Deployed the catalog service with in-cluster MySQL backed by a PVC on an EKS cluster.
-# Used gp2 StorageClass — the default EBS-backed class on EKS <= 1.29 (provisioner: ebs.csi.aws.com).
-# For EKS >= 1.30, no default StorageClass is created; create a gp3 class manually and update storageClass accordingly.
 
 app:
   persistence:
@@ -12,5 +10,5 @@ mysql:
   create: true
   persistentVolume:
     enabled: true
-    size: 10Gi
-    storageClass: "gp2"
+    size: 1Gi
+    storageClass: "gp3"
