@@ -405,8 +405,6 @@ Each `values-*.yaml` file is a **partial override** — it only specifies the ke
 | `values-mysql-pvc-eks.yaml` | `mysql` | `true` | `true` (gp2) | EKS with EBS persistent storage |
 | `values-mysql-pvc-baremetal.yaml` | `mysql` | `true` | `true` (local-path) | Bare-metal Kubernetes with local storage |
 | `values-external-mysql.yaml` | `mysql` | `false` | N/A | Point to RDS or any external MySQL |
-| `values-hpa.yaml` | `in-memory` | `false` | `false` | HPA on, min 2 / max 5 replicas |
-| `values-pdb.yaml` | `in-memory` | `false` | `false` | PDB on, 3 replicas, minAvailable 2 |
 
 ### How the Merge Works — A Concrete Example
 
