@@ -1,100 +1,133 @@
-# Orders Chart — Overlay Runbook
+# Orders Chart — Helm Deployment Runbook
 
-> Base chart: `src/orders/chart/` | Base values: `values.yaml` (untouched)
-> Two independent axes: **DB** × **Messaging** — each overlay file overrides only what changes.
+I forked this repository from the [AWS Retail Store Sample App](https://github.com/aws-containers/retail-store-sample-app) and extended the `src/orders/chart` directory by authoring platform-specific overlay values files on top of the base `values.yaml`. I validated each scenario end-to-end — bare-metal, EKS, and external managed services — to demonstrate two-axis (DB × Messaging) Helm configuration across real deployment targets.
 
----
-
-## Overlay Matrix
-
-| # | File | DB | Messaging | Platform |
-|---|------|----|-----------|----------|
-| 01 | `values-01-in-memory.yaml` | H2 in-memory | in-memory | any |
-| 02 | `values-02-postgresql-ephemeral-msg-in-memory.yaml` | PG ephemeral | in-memory | bare-metal/EKS |
-| 03 | `values-03-postgresql-pvc-baremetal-msg-in-memory.yaml` | PG + `local-path` PVC | in-memory | bare-metal |
-| 04 | `values-04-postgresql-pvc-eks-msg-in-memory.yaml` | PG + `gp2` EBS PVC | in-memory | EKS |
-| 05 | `values-05-external-postgresql-msg-in-memory.yaml` | RDS (no pod) | in-memory | EKS |
-| 06 | `values-06-postgresql-ephemeral-rabbitmq-ephemeral.yaml` | PG ephemeral | RabbitMQ ephemeral | any |
-| 07 | `values-07-postgresql-pvc-baremetal-rabbitmq-ephemeral.yaml` | PG + `local-path` PVC | RabbitMQ ephemeral | bare-metal |
-| 08 | `values-08-postgresql-pvc-baremetal-rabbitmq-pvc-baremetal.yaml` | PG + `local-path` PVC | RabbitMQ + `local-path` PVC | bare-metal |
-| 09 | `values-09-postgresql-pvc-eks-rabbitmq-pvc-eks.yaml` | PG + `gp2` EBS PVC | RabbitMQ + `gp2` EBS PVC | EKS |
-| 10 | `values-10-external-postgresql-rabbitmq-ephemeral.yaml` | RDS (no pod) | RabbitMQ ephemeral | EKS |
-| 11 | `values-11-external-postgresql-rabbitmq-pvc-eks.yaml` | RDS (no pod) | RabbitMQ + `gp2` EBS PVC | EKS |
-| 12 | `values-12-external-postgresql-external-rabbitmq.yaml` | RDS (no pod) | External RabbitMQ (no pod) | EKS |
-| 13 | `values-13-postgresql-ephemeral-sqs.yaml` | PG ephemeral | AWS SQS (IRSA) | EKS |
-| 14 | `values-14-external-postgresql-sqs.yaml` | RDS (no pod) | AWS SQS (IRSA) | EKS |
-| 15 | `values-15-hpa.yaml` | — | — | any |
-| 16 | `values-16-pdb.yaml` | — | — | any |
+> **Deployment pattern:** Every `helm` command passes `values.yaml` first (base) and the scenario file second (patch). Helm deep-merges both; the patch file overrides only the keys it declares.
 
 ---
 
-## Quick Commands
+## Values Files — Scenario Matrix
+
+All values files are scoped to **database and messaging configuration**. Two independent axes are covered: **DB** (persistence provider) and **Messaging** (event provider).
+
+| File | DB Provider | DB Pod | DB PVC | Messaging Provider | Messaging Pod | StorageClass |
+|---|---|:---:|:---:|---|:---:|---|
+| `values.yaml` | `in-memory` | ✗ | ✗ | `in-memory` | ✗ | — |
+| `values-01-in-memory.yaml` | `in-memory` | ✗ | ✗ | `in-memory` | ✗ | — |
+| `values-02-postgresql-ephemeral-msg-in-memory.yaml` | `postgres` | ✓ | ✗ | `in-memory` | ✗ | — |
+| `values-03-postgresql-rabbitmq-pvc-baremetal.yaml` | `postgres` | ✓ | ✓ | `rabbitmq` | ✓ | `local-path` |
+| `values-04-postgresql-rabbitmq-pvc-eks.yaml` | `postgres` | ✓ | ✓ | `rabbitmq` | ✓ | `gp2` |
+| `values-05-postgresql-rabbitmq-external.yaml` | `postgres` | ✗ | ✗ | `rabbitmq` | ✗ | — |
+| `values-06-postgresql-pvc-eks-sqs.yaml` | `postgres` | ✓ | ✓ | `sqs` | ✗ | `gp2` |
+
+> **DB endpoint auto-construction:** `app.persistence.endpoint` is only required when `postgresql.create: false` (external RDS). When `postgresql.create: true`, `_helpers.tpl` auto-constructs the endpoint as `<release>-orders-postgresql:<port>` — no manual value needed. `RETAIL_ORDERS_PERSISTENCE_ENDPOINT` is only injected into the ConfigMap when `provider: postgres`.
+
+> **RabbitMQ addresses auto-construction:** `app.messaging.rabbitmq.addresses` is only required when `rabbitmq.create: false` (external broker). When `rabbitmq.create: true`, `_helpers.tpl` auto-constructs the address as `<release>-orders-rabbitmq:<amqp-port>` — no manual value needed. `RETAIL_ORDERS_MESSAGING_RABBITMQ_ADDRESSES` is only injected into the ConfigMap when `provider: rabbitmq`.
+
+---
+
+## Commands Per Scenario
+
+### Template Validation (all scenarios)
 
 ```bash
-# 01 — fully in-memory (smoke test)
-helm install orders ./src/orders/chart -f values-01-in-memory.yaml
+helm template orders src/orders/chart/ \
+  -f src/orders/chart/values.yaml \
+  -f src/orders/chart/<values-file>.yaml
+```
 
-# 02 — PostgreSQL ephemeral + in-memory messaging
-helm install orders ./src/orders/chart -f values-02-postgresql-ephemeral-msg-in-memory.yaml
+### Scenario 1 — In-Memory (Baseline)
 
-# 03 — PostgreSQL PVC (bare-metal) + in-memory messaging
-helm install orders ./src/orders/chart -f values-03-postgresql-pvc-baremetal-msg-in-memory.yaml
+```bash
+helm upgrade --install orders src/orders/chart/ \
+  -f src/orders/chart/values.yaml \
+  -f src/orders/chart/values-01-in-memory.yaml \
+  --namespace orders --create-namespace
 
-# 04 — PostgreSQL PVC (EKS gp2) + in-memory messaging
-helm install orders ./src/orders/chart -f values-04-postgresql-pvc-eks-msg-in-memory.yaml
+kubectl get pods -n orders
+```
 
-# 05 — External RDS + in-memory messaging
-helm install orders ./src/orders/chart -f values-05-external-postgresql-msg-in-memory.yaml
+### Scenario 2 — In-Cluster PostgreSQL (Ephemeral) + In-Memory Messaging
 
-# 06 — PostgreSQL ephemeral + RabbitMQ ephemeral
-helm install orders ./src/orders/chart -f values-06-postgresql-ephemeral-rabbitmq-ephemeral.yaml
+```bash
+helm upgrade --install orders src/orders/chart/ \
+  -f src/orders/chart/values.yaml \
+  -f src/orders/chart/values-02-postgresql-ephemeral-msg-in-memory.yaml \
+  --namespace orders --create-namespace
 
-# 07 — PostgreSQL PVC (bare-metal) + RabbitMQ ephemeral
-helm install orders ./src/orders/chart -f values-07-postgresql-pvc-baremetal-rabbitmq-ephemeral.yaml
+kubectl get pods,svc -n orders
+kubectl exec -n orders -it orders-postgresql-0 -- psql -U orders -d orders
+```
 
-# 08 — Full bare-metal persistent stack
-helm install orders ./src/orders/chart -f values-08-postgresql-pvc-baremetal-rabbitmq-pvc-baremetal.yaml
+### Scenario 3 — PostgreSQL + RabbitMQ (Bare-metal PVC)
 
-# 09 — Full EKS gp2 persistent stack (in-cluster)
-helm install orders ./src/orders/chart -f values-09-postgresql-pvc-eks-rabbitmq-pvc-eks.yaml
+```bash
+helm upgrade --install orders src/orders/chart/ \
+  -f src/orders/chart/values.yaml \
+  -f src/orders/chart/values-03-postgresql-rabbitmq-pvc-baremetal.yaml \
+  --namespace orders --create-namespace
 
-# 10 — External RDS + RabbitMQ ephemeral
-helm install orders ./src/orders/chart -f values-10-external-postgresql-rabbitmq-ephemeral.yaml
+kubectl get sc
+kubectl get pvc,pods,svc -n orders
+kubectl exec -n orders -it orders-postgresql-0 -- psql -U orders -d orders
+```
 
-# 11 — External RDS + RabbitMQ PVC (EKS gp2)
-helm install orders ./src/orders/chart -f values-11-external-postgresql-rabbitmq-pvc-eks.yaml
+### Scenario 4 — PostgreSQL + RabbitMQ (EKS gp2 PVC)
 
-# 12 — Fully external (RDS + external RabbitMQ)
-helm install orders ./src/orders/chart -f values-12-external-postgresql-external-rabbitmq.yaml
+```bash
+helm upgrade --install orders src/orders/chart/ \
+  -f src/orders/chart/values.yaml \
+  -f src/orders/chart/values-04-postgresql-rabbitmq-pvc-eks.yaml \
+  --namespace orders --create-namespace
 
-# 13 — PostgreSQL ephemeral + AWS SQS (IRSA)
-helm install orders ./src/orders/chart -f values-13-postgresql-ephemeral-sqs.yaml
+kubectl get sc
+kubectl get pvc,pods,svc -n orders
+kubectl exec -n orders -it orders-postgresql-0 -- psql -U orders -d orders
+```
 
-# 14 — External RDS + AWS SQS (IRSA) — fully managed AWS
-helm install orders ./src/orders/chart -f values-14-external-postgresql-sqs.yaml
+### Scenario 5 — External RDS + External RabbitMQ
 
-# Combine with HPA (stack on top of any scenario above)
-helm install orders ./src/orders/chart \
-  -f values-14-external-postgresql-sqs.yaml \
-  -f values-15-hpa.yaml
+```bash
+helm upgrade --install orders src/orders/chart/ \
+  -f src/orders/chart/values.yaml \
+  -f src/orders/chart/values-05-postgresql-rabbitmq-external.yaml \
+  --namespace orders --create-namespace
 
-# Combine with PDB (requires replicaCount >= 3)
-helm install orders ./src/orders/chart \
-  -f values-09-postgresql-pvc-eks-rabbitmq-pvc-eks.yaml \
-  -f values-16-pdb.yaml
+kubectl get pod -n orders -l app.kubernetes.io/name=orders
+kubectl describe pod -n orders -l app.kubernetes.io/name=orders
+```
+
+### Scenario 6 — PostgreSQL PVC (EKS gp2) + AWS SQS (IRSA)
+
+```bash
+# Pre-requisite: SQS queue must exist; IRSA role must have sqs:SendMessage permission.
+helm upgrade --install orders src/orders/chart/ \
+  -f src/orders/chart/values.yaml \
+  -f src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml \
+  --namespace orders --create-namespace
+
+kubectl get pod -n orders
+kubectl logs -n orders -l app.kubernetes.io/name=orders
+```
+
+### Teardown
+
+```bash
+helm uninstall orders -n orders
+kubectl delete namespace orders
 ```
 
 ---
 
 ## Key Observations
 
-| Topic | Note |
-|-------|------|
-| **Two-axis model** | `app.persistence.provider` and `app.messaging.provider` are independent — any DB can pair with any messaging backend |
-| **`postgresql.create`** | `true` = StatefulSet created in-cluster; `false` = use `app.persistence.endpoint` for external RDS |
-| **`rabbitmq.create`** | `true` = StatefulSet created in-cluster; `false` = use `app.messaging.rabbitmq.addresses` for external broker |
-| **SQS credentials** | No Secret required; IRSA injects credentials via `serviceAccount.annotations` (`eks.amazonaws.com/role-arn`) |
-| **`app.messaging.rabbitmq.secret`** | Only mounted by the Deployment when `messaging.provider: rabbitmq`; ignored for `in-memory` and `sqs` |
-| **`securityGroups.create`** | EKS-only CRD (`SecurityGroupPolicy`) — enables VPC SG assignment to the orders pod for RDS/external broker access |
-| **PVC + `storageClass`** | `local-path` for bare-metal; `gp2` for EKS — set under both `postgresql.persistentVolume` and `rabbitmq.persistentVolume` |
-| **`values.yaml`** | Base file is never modified — all scenario-specific overrides live in numbered overlay files |
+| Scenario | Observed Behaviour |
+|---|---|
+| In-memory | No DB or messaging dependency; all data lost on pod restart |
+| PostgreSQL ephemeral | PostgreSQL pod created alongside orders; data lost on pod restart |
+| PostgreSQL + RabbitMQ (bare-metal) | Both PVCs bound to `local-path`; data and messages persisted across restarts |
+| PostgreSQL + RabbitMQ (EKS) | Both PVCs bound to `gp2` EBS volumes; data and messages persisted across restarts |
+| External RDS + External RabbitMQ | No StatefulSet created; `endpoint` and `addresses` must be set explicitly in the overlay |
+| PostgreSQL + SQS (EKS) | No RabbitMQ pod; IRSA injects AWS credentials — no Secret needed for SQS auth |
+| DB endpoint auto-build | When `postgresql.create: true`, chart builds `RETAIL_ORDERS_PERSISTENCE_ENDPOINT` as `<release>-orders-postgresql:5432` automatically via `_helpers.tpl` |
+| RabbitMQ address auto-build | When `rabbitmq.create: true`, chart builds `RETAIL_ORDERS_MESSAGING_RABBITMQ_ADDRESSES` as `<release>-orders-rabbitmq:5672` automatically via `_helpers.tpl` |
