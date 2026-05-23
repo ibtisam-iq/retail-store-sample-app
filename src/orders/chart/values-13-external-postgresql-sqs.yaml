@@ -1,0 +1,22 @@
+# Deployed the orders service with external PostgreSQL (RDS) and AWS SQS messaging.
+# Fully managed AWS backend — no in-cluster stateful pods at all.
+# Pre-requisites: RDS instance accessible from the cluster; SQS queue exists; IRSA role configured.
+
+app:
+  persistence:
+    provider: postgresql
+    endpoint: "<RDS_ENDPOINT>:5432"
+    database: orders
+    secret:
+      create: true
+      username: orders
+      password: "<REPLACE_ME>"
+  messaging:
+    provider: sqs
+
+postgresql:
+  create: false
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<SQS_IRSA_ROLE_NAME>

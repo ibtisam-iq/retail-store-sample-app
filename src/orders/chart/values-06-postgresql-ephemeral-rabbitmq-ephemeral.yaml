@@ -1,0 +1,27 @@
+# Deployed the orders service with in-cluster PostgreSQL (no PVC) and in-cluster RabbitMQ (no PVC).
+# Both stateful components are ephemeral — data and queued messages lost on pod restarts.
+
+app:
+  persistence:
+    provider: postgresql
+    secret:
+      password: "orders123"
+  messaging:
+    provider: rabbitmq
+    rabbitmq:
+      addresses:
+        - "amqp://orders:orders123@orders-rabbitmq:5672"
+      secret:
+        create: true
+        username: orders
+        password: "orders123"
+
+postgresql:
+  create: true
+  persistentVolume:
+    enabled: false
+
+rabbitmq:
+  create: true
+  persistentVolume:
+    enabled: false
