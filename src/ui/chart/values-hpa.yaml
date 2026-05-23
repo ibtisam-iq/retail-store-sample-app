@@ -1,0 +1,8 @@
+# Deployed the UI service with Horizontal Pod Autoscaler enabled.
+# Configured 2 minimum replicas, 5 maximum, scaling at 50% CPU utilization.
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 50

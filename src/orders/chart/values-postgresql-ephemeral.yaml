@@ -1,0 +1,15 @@
+# Deployed the orders service backed by an in-cluster PostgreSQL pod with ephemeral storage.
+# Enabled postgresql.create with no PVC — data is lost on pod restart.
+
+app:
+  persistence:
+    provider: postgresql
+    secret:
+      password: "orders123"
+  messaging:
+    provider: in-memory
+
+postgresql:
+  create: true
+  persistentVolume:
+    enabled: false

@@ -1,0 +1,8 @@
+# Deployed the UI service with a Pod Disruption Budget to maintain availability during node drains.
+# Set 3 replicas with minAvailable 2 so at least 2 UI pods are always running.
+
+replicaCount: 3
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2

@@ -1,0 +1,7 @@
+# Deployed the UI service with NodePort to expose it on a static port across all cluster nodes.
+# Useful for bare-metal clusters without a cloud load balancer.
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 30080

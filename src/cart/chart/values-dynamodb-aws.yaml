@@ -1,0 +1,12 @@
+# Deployed the cart service pointing to an AWS-managed DynamoDB table in us-east-1.
+# Set dynamodb.create to false — no in-cluster DynamoDB pod created; IAM provides access.
+
+app:
+  persistence:
+    provider: dynamodb
+    dynamodb:
+      tableName: Items
+      createTable: false
+
+dynamodb:
+  create: false

@@ -1,0 +1,12 @@
+# Deployed the cart service backed by a local DynamoDB pod running inside the cluster.
+# Set dynamodb.create to true so the chart spins up its own DynamoDB Local container.
+
+app:
+  persistence:
+    provider: dynamodb
+    dynamodb:
+      tableName: Items
+      createTable: true
+
+dynamodb:
+  create: true

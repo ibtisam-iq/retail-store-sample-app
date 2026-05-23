@@ -1,0 +1,10 @@
+# Deployed the UI service with the AI chat feature enabled using an OpenAI-compatible endpoint.
+# Provide the base URL and API key for any OpenAI-compatible API (OpenAI, Ollama, LM Studio, etc.).
+
+app:
+  chat:
+    enabled: true
+    provider: openai
+    model: gpt-4o-mini
+    openai:
+      baseUrl: "https://api.openai.com/v1"

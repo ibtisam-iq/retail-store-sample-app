@@ -1,0 +1,9 @@
+# Deployed the checkout service backed by an in-cluster Redis pod.
+# Set redis.create to true so the chart spins up its own Redis container.
+
+app:
+  persistence:
+    provider: redis
+
+redis:
+  create: true

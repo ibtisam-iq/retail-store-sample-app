@@ -1,0 +1,6 @@
+# Deployed the UI service with LoadBalancer type to provision a cloud NLB (EKS/GKE/AKS).
+# On EKS this creates an AWS Network Load Balancer automatically.
+
+service:
+  type: LoadBalancer
+  port: 80

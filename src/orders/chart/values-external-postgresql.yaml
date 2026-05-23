@@ -1,0 +1,17 @@
+# Deployed the orders service pointing to an externally managed PostgreSQL instance (e.g. RDS).
+# Set postgresql.create to false — no in-cluster PostgreSQL pod created.
+
+app:
+  persistence:
+    provider: postgresql
+    endpoint: "<EXTERNAL_POSTGRESQL_HOST>:5432"
+    database: orders
+    secret:
+      create: true
+      username: orders
+      password: "<REPLACE_ME>"
+  messaging:
+    provider: in-memory
+
+postgresql:
+  create: false

@@ -1,0 +1,8 @@
+# Deployed the checkout service with a Pod Disruption Budget for high availability.
+# Set 3 replicas with minAvailable 2 to tolerate one voluntary disruption.
+
+replicaCount: 3
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2

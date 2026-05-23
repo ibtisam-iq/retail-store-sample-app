@@ -1,0 +1,6 @@
+# Deployed the UI service with the default ClusterIP service type.
+# Used as the baseline — no external access; access via kubectl port-forward only.
+
+service:
+  type: ClusterIP
+  port: 80

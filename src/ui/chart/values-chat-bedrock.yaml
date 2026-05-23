@@ -1,0 +1,10 @@
+# Deployed the UI service with the AI chat feature enabled using AWS Bedrock.
+# Requires IRSA or node instance profile with bedrock:InvokeModel permission.
+
+app:
+  chat:
+    enabled: true
+    provider: bedrock
+    model: amazon.nova-lite-v1:0
+    bedrock:
+      region: us-east-1

@@ -1,0 +1,12 @@
+# Deployed the checkout service connecting to a TLS-enabled Redis endpoint (e.g. ElastiCache with in-transit encryption).
+# The chart uses rediss:// scheme when tls is true.
+
+app:
+  persistence:
+    provider: redis
+    redis:
+      endpoint: "<ELASTICACHE_TLS_ENDPOINT>:6380"
+      tls: true
+
+redis:
+  create: false

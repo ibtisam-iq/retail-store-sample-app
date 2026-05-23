@@ -1,0 +1,6 @@
+# Deployed the checkout service with in-memory session persistence — no Redis.
+# Used as the baseline to confirm the chart renders and the pod starts healthy.
+
+app:
+  persistence:
+    provider: in-memory

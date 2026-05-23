@@ -1,0 +1,27 @@
+# Deployed the orders service with in-cluster RabbitMQ for async order messaging.
+# Kept PostgreSQL as ephemeral in-cluster — focused on validating RabbitMQ integration.
+
+app:
+  persistence:
+    provider: postgresql
+    secret:
+      password: "orders123"
+  messaging:
+    provider: rabbitmq
+    rabbitmq:
+      addresses:
+        - "amqp://orders:orders123@orders-rabbitmq:5672"
+      secret:
+        create: true
+        username: orders
+        password: "orders123"
+
+postgresql:
+  create: true
+  persistentVolume:
+    enabled: false
+
+rabbitmq:
+  create: true
+  persistentVolume:
+    enabled: false

@@ -1,0 +1,17 @@
+# Deployed the orders service with in-cluster PostgreSQL and a PVC on EKS.
+# Used gp3 EBS StorageClass — data persisted via EBS volume across pod restarts.
+
+app:
+  persistence:
+    provider: postgresql
+    secret:
+      password: "orders123"
+  messaging:
+    provider: in-memory
+
+postgresql:
+  create: true
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: gp3

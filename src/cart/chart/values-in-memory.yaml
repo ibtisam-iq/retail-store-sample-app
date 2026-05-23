@@ -1,0 +1,6 @@
+# Deployed the cart service with in-memory persistence — no external database.
+# Used as the baseline to confirm the chart renders and the pod starts healthy.
+
+app:
+  persistence:
+    provider: in-memory

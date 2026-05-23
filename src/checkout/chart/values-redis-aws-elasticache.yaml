@@ -1,0 +1,12 @@
+# Deployed the checkout service pointing to an AWS ElastiCache Redis cluster.
+# Set redis.create to false — no in-cluster Redis pod created.
+
+app:
+  persistence:
+    provider: redis
+    redis:
+      endpoint: "<ELASTICACHE_ENDPOINT>:6379"
+      tls: false
+
+redis:
+  create: false
