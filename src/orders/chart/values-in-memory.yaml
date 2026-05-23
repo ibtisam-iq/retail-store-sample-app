@@ -1,8 +1,0 @@
-# Deployed the orders service with in-memory persistence and in-memory messaging.
-# Used as the baseline — no PostgreSQL or RabbitMQ pods created.
-
-app:
-  persistence:
-    provider: in-memory
-  messaging:
-    provider: in-memory
