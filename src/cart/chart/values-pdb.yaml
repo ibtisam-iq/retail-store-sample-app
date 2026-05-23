@@ -1,8 +1,0 @@
-# Deployed the cart service with a Pod Disruption Budget to maintain availability during node drains.
-# Set 3 replicas with minAvailable 2 so at least 2 pods are always running during voluntary disruptions.
-
-replicaCount: 3
-
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 2
