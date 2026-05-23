@@ -1,18 +1,16 @@
-# Deployed the orders service with both PostgreSQL and RabbitMQ backed by gp2 EBS PVCs on EKS.
-# Both stateful components use EBS volumes — most durable in-cluster pattern for EKS.
+# Scenario: DB=PostgreSQL + gp2 EBS PVC, Messaging=RabbitMQ + gp2 EBS PVC (EKS)
+# Both DB and message queue use EBS gp2 volumes on EKS; full persistent stack without managed services.
 
 app:
   persistence:
-    provider: postgresql
+    provider: postgres
     secret:
       password: "orders123"
+
   messaging:
     provider: rabbitmq
     rabbitmq:
-      addresses:
-        - "amqp://orders:orders123@orders-rabbitmq:5672"
       secret:
-        create: true
         username: orders
         password: "orders123"
 
@@ -20,12 +18,12 @@ postgresql:
   create: true
   persistentVolume:
     enabled: true
-    size: 10Gi
+    size: 1Gi
     storageClass: gp2
 
 rabbitmq:
   create: true
   persistentVolume:
     enabled: true
-    size: 5Gi
+    size: 1Gi
     storageClass: gp2

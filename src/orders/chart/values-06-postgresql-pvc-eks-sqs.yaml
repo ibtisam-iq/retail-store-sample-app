@@ -9,7 +9,9 @@ app:
       password: "orders123"
   messaging:
     provider: sqs
-
+    sqs:
+      topic: "orders-events"
+      
 postgresql:
   create: true
   persistentVolume:

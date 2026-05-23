@@ -1,8 +1,0 @@
-# Scenario: PodDisruptionBudget enabled — ensures minimum availability during voluntary disruptions
-# Requires replicaCount >= 3 (or HPA minReplicas >= 3) to be effective.
-
-replicaCount: 3
-
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 2
