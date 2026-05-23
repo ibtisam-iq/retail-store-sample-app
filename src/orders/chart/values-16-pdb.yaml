@@ -1,5 +1,5 @@
-# Deployed the orders service with a Pod Disruption Budget for high availability.
-# Set 3 replicas with minAvailable 2 to tolerate one voluntary disruption.
+# Scenario: PodDisruptionBudget enabled — ensures minimum availability during voluntary disruptions
+# Requires replicaCount >= 3 (or HPA minReplicas >= 3) to be effective.
 
 replicaCount: 3
 

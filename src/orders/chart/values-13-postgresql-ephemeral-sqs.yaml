@@ -1,0 +1,28 @@
+# Scenario: DB=in-cluster PostgreSQL (ephemeral), Messaging=AWS SQS (IRSA)
+# Used on EKS when RabbitMQ is replaced by SQS; credentials come from IRSA — no Secret needed.
+
+app:
+  persistence:
+    provider: 'postgres'
+    database: 'orders'
+    secret:
+      create: true
+      name: orders-db
+      username: orders
+      password: "orders123"
+
+  messaging:
+    provider: 'sqs'
+
+postgresql:
+  create: true
+  persistentVolume:
+    enabled: false
+
+rabbitmq:
+  create: false
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<IRSA_ROLE_NAME>

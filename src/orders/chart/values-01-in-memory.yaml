@@ -1,8 +1,9 @@
-# Deployed the orders service fully in-memory: H2 embedded DB + in-memory messaging.
-# Baseline scenario — no PostgreSQL, no RabbitMQ, no SQS. Fastest startup, zero dependencies.
+# Scenario: DB=in-memory (H2), Messaging=in-memory
+# Used to verify the chart renders correctly with zero infrastructure dependencies.
 
 app:
   persistence:
-    provider: in-memory
+    provider: 'in-memory'
+
   messaging:
-    provider: in-memory
+    provider: 'in-memory'

@@ -1,20 +1,25 @@
-# Deployed the orders service with PostgreSQL on PVC (bare-metal, local-path) and RabbitMQ ephemeral.
-# DB data persists across restarts; RabbitMQ messages are lost on pod restart.
+# Scenario: DB=PostgreSQL + local-path PVC (bare-metal), Messaging=RabbitMQ (ephemeral)
+# DB data persists across pod restarts; RabbitMQ messages are lost on restart.
 
 app:
   persistence:
-    provider: postgresql
+    provider: 'postgres'
+    database: 'orders'
     secret:
+      create: true
+      name: orders-db
+      username: orders
       password: "orders123"
+
   messaging:
-    provider: rabbitmq
+    provider: 'rabbitmq'
     rabbitmq:
-      addresses:
-        - "amqp://orders:orders123@orders-rabbitmq:5672"
+      addresses: []
       secret:
         create: true
-        username: orders
-        password: "orders123"
+        name: orders-rabbitmq
+        username: "guest"
+        password: "guest"
 
 postgresql:
   create: true

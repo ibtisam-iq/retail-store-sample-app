@@ -1,0 +1,32 @@
+# Scenario: DB=external RDS PostgreSQL (no pod), Messaging=AWS SQS (IRSA)
+# Fully managed AWS stack: RDS for persistence, SQS for messaging — no StatefulSet in cluster.
+
+app:
+  persistence:
+    provider: 'postgres'
+    endpoint: '<RDS_ENDPOINT>:5432'
+    database: 'orders'
+    secret:
+      create: true
+      name: orders-db
+      username: orders
+      password: "<REPLACE_ME>"
+
+  messaging:
+    provider: 'sqs'
+
+postgresql:
+  create: false
+
+rabbitmq:
+  create: false
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<IRSA_ROLE_NAME>
+
+securityGroups:
+  create: true
+  securityGroupIds:
+    - <SG_ID_ALLOWING_RDS_5432>

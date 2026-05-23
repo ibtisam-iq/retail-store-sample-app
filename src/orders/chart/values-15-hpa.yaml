@@ -1,5 +1,5 @@
-# Deployed the orders service with Horizontal Pod Autoscaler enabled.
-# Configured 2 minimum replicas, 5 maximum, scaling at 70% CPU utilization.
+# Scenario: HPA enabled — horizontal pod autoscaling based on CPU utilization
+# Combine with any DB/messaging overlay using multiple -f flags.
 
 autoscaling:
   enabled: true

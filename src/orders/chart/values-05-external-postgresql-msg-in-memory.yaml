@@ -1,0 +1,24 @@
+# Scenario: DB=external RDS PostgreSQL (no pod), Messaging=in-memory
+# Used on EKS with AWS RDS; no PostgreSQL StatefulSet is created inside the cluster.
+
+app:
+  persistence:
+    provider: 'postgres'
+    endpoint: '<RDS_ENDPOINT>:5432'
+    database: 'orders'
+    secret:
+      create: true
+      name: orders-db
+      username: orders
+      password: "<REPLACE_ME>"
+
+  messaging:
+    provider: 'in-memory'
+
+postgresql:
+  create: false
+
+securityGroups:
+  create: true
+  securityGroupIds:
+    - <SG_ID_ALLOWING_RDS_5432>
