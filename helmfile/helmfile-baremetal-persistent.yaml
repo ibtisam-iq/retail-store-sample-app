@@ -1,0 +1,73 @@
+# Scenario: Bare-metal cluster (k3s / kubeadm) — all stateful services use PVC
+# StorageClass: local-path (default on k3s)
+# Sequence: catalog → cart → orders → checkout → ui
+# Run: helmfile -f helmfile/helmfile-baremetal-persistent.yaml apply
+
+releases:
+
+  - name: catalog
+    namespace: catalog
+    createNamespace: true
+    chart: src/catalog/chart
+    wait: true
+    waitForJobs: true
+    timeout: 300
+    values:
+      - src/catalog/chart/values.yaml
+      - src/catalog/chart/values-mysql-pvc-baremetal.yaml
+
+  - name: cart
+    namespace: cart
+    createNamespace: true
+    chart: src/cart/chart
+    wait: true
+    timeout: 120
+    needs:
+      - catalog/catalog
+    values:
+      - src/cart/chart/values.yaml
+      - src/cart/chart/values-dynamodb-local.yaml
+
+  - name: orders
+    namespace: orders
+    createNamespace: true
+    chart: src/orders/chart
+    wait: true
+    waitForJobs: true
+    timeout: 300
+    needs:
+      - catalog/catalog
+    values:
+      - src/orders/chart/values.yaml
+      - src/orders/chart/values-03-postgresql-rabbitmq-pvc-baremetal.yaml
+
+  - name: checkout
+    namespace: checkout
+    createNamespace: true
+    chart: src/checkout/chart
+    wait: true
+    timeout: 180
+    needs:
+      - orders/orders
+    values:
+      - src/checkout/chart/values.yaml
+      - src/checkout/chart/values-redis-local.yaml
+    set:
+      - name: app.endpoints.orders
+        value: "http://orders.orders.svc.cluster.local"
+
+  - name: ui
+    namespace: ui
+    createNamespace: true
+    chart: src/ui/chart
+    wait: true
+    timeout: 300
+    needs:
+      - catalog/catalog
+      - cart/cart
+      - orders/orders
+      - checkout/checkout
+    values:
+      - src/ui/chart/values.yaml
+      - src/ui/chart/values-endpoints.yaml
+      - src/ui/chart/values-nodeport.yaml

@@ -1,0 +1,73 @@
+# Scenario: AWS EKS cluster — PVC-backed storage using gp2 StorageClass
+# StorageClass: gp2 (AWS EBS, provisioned by EKS)
+# UI: ClusterIP (use ALB Ingress or kubectl port-forward for access)
+# Run: helmfile -f helmfile/helmfile-eks.yaml apply
+
+releases:
+
+  - name: catalog
+    namespace: catalog
+    createNamespace: true
+    chart: src/catalog/chart
+    wait: true
+    waitForJobs: true
+    timeout: 300
+    values:
+      - src/catalog/chart/values.yaml
+      - src/catalog/chart/values-mysql-pvc-eks.yaml
+
+  - name: cart
+    namespace: cart
+    createNamespace: true
+    chart: src/cart/chart
+    wait: true
+    timeout: 120
+    needs:
+      - catalog/catalog
+    values:
+      - src/cart/chart/values.yaml
+      - src/cart/chart/values-dynamodb-local.yaml
+
+  - name: orders
+    namespace: orders
+    createNamespace: true
+    chart: src/orders/chart
+    wait: true
+    waitForJobs: true
+    timeout: 300
+    needs:
+      - catalog/catalog
+    values:
+      - src/orders/chart/values.yaml
+      - src/orders/chart/values-04-postgresql-rabbitmq-pvc-eks.yaml
+
+  - name: checkout
+    namespace: checkout
+    createNamespace: true
+    chart: src/checkout/chart
+    wait: true
+    timeout: 180
+    needs:
+      - orders/orders
+    values:
+      - src/checkout/chart/values.yaml
+      - src/checkout/chart/values-redis-local.yaml
+    set:
+      - name: app.endpoints.orders
+        value: "http://orders.orders.svc.cluster.local"
+
+  - name: ui
+    namespace: ui
+    createNamespace: true
+    chart: src/ui/chart
+    wait: true
+    timeout: 300
+    needs:
+      - catalog/catalog
+      - cart/cart
+      - orders/orders
+      - checkout/checkout
+    values:
+      - src/ui/chart/values.yaml
+      - src/ui/chart/values-endpoints.yaml
+      - src/ui/chart/values-clusterip.yaml

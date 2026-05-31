@@ -1,0 +1,71 @@
+# Scenario: Bare-metal cluster — all services run in-memory (no PVC, no persistence)
+# Use case: fastest local spin-up, CI smoke tests, chart rendering validation
+# StorageClass: none required
+# Run: helmfile -f helmfile/helmfile-baremetal-ephemeral.yaml apply
+
+releases:
+
+  - name: catalog
+    namespace: catalog
+    createNamespace: true
+    chart: src/catalog/chart
+    wait: true
+    timeout: 180
+    values:
+      - src/catalog/chart/values.yaml
+      - src/catalog/chart/values-mysql-ephemeral.yaml
+
+  - name: cart
+    namespace: cart
+    createNamespace: true
+    chart: src/cart/chart
+    wait: true
+    timeout: 120
+    needs:
+      - catalog/catalog
+    values:
+      - src/cart/chart/values.yaml
+      - src/cart/chart/values-dynamodb-local.yaml
+
+  - name: orders
+    namespace: orders
+    createNamespace: true
+    chart: src/orders/chart
+    wait: true
+    timeout: 180
+    needs:
+      - catalog/catalog
+    values:
+      - src/orders/chart/values.yaml
+      - src/orders/chart/values-01-postgresql-rabbitmq-ephemeral.yaml
+
+  - name: checkout
+    namespace: checkout
+    createNamespace: true
+    chart: src/checkout/chart
+    wait: true
+    timeout: 120
+    needs:
+      - orders/orders
+    values:
+      - src/checkout/chart/values.yaml
+      - src/checkout/chart/values-redis-local.yaml
+    set:
+      - name: app.endpoints.orders
+        value: "http://orders.orders.svc.cluster.local"
+
+  - name: ui
+    namespace: ui
+    createNamespace: true
+    chart: src/ui/chart
+    wait: true
+    timeout: 300
+    needs:
+      - catalog/catalog
+      - cart/cart
+      - orders/orders
+      - checkout/checkout
+    values:
+      - src/ui/chart/values.yaml
+      - src/ui/chart/values-endpoints.yaml
+      - src/ui/chart/values-nodeport.yaml
