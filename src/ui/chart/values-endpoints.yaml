@@ -1,0 +1,11 @@
+# Upstream service endpoints for the UI application.
+# The UI service requires the in-cluster DNS addresses of all four backend services to function.
+# This file is passed as a mandatory -f overlay alongside every scenario values file.
+# Endpoints follow the pattern: http://<svc-name>.<namespace>.svc.cluster.local:<port>
+
+app:
+  endpoints:
+    catalog: http://catalog.catalog.svc.cluster.local:80
+    orders: http://orders.orders.svc.cluster.local:80
+    carts: http://cart-carts.cart.svc.cluster.local:80
+    checkout: http://checkout.checkout.svc.cluster.local:80
