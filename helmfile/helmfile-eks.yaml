@@ -7,50 +7,50 @@ releases:
   - name: catalog
     namespace: catalog
     createNamespace: true
-    chart: src/catalog/chart
+    chart: ../src/catalog/chart
     wait: true
     waitForJobs: true
     timeout: 300
     values:
-      - src/catalog/chart/values.yaml
+      - ../src/catalog/chart/values.yaml
       - src/catalog/chart/values-mysql-pvc-eks.yaml
 
   - name: cart
     namespace: cart
     createNamespace: true
-    chart: src/cart/chart
+    chart: ../src/cart/chart
     wait: true
     timeout: 120
     needs:
       - catalog/catalog
     values:
-      - src/cart/chart/values.yaml
-      - src/cart/chart/values-dynamodb-aws.yaml
+      - ../src/cart/chart/values.yaml
+      - ../src/cart/chart/values-dynamodb-aws.yaml
 
   - name: orders
     namespace: orders
     createNamespace: true
-    chart: src/orders/chart
+    chart: ../src/orders/chart
     wait: true
     waitForJobs: true
     timeout: 300
     needs:
       - catalog/catalog
     values:
-      - src/orders/chart/values.yaml
-      - src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml
+      - ../src/orders/chart/values.yaml
+      - ../src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml
 
   - name: checkout
     namespace: checkout
     createNamespace: true
-    chart: src/checkout/chart
+    chart: ../src/checkout/chart
     wait: true
     timeout: 180
     needs:
       - orders/orders
     values:
-      - src/checkout/chart/values.yaml
-      - src/checkout/chart/values-redis-local.yaml
+      - ../src/checkout/chart/values.yaml
+      - ../src/checkout/chart/values-redis-local.yaml
     set:
       - name: app.endpoints.orders
         value: "http://orders.orders.svc.cluster.local"
@@ -58,7 +58,7 @@ releases:
   - name: ui
     namespace: ui
     createNamespace: true
-    chart: src/ui/chart
+    chart: ../src/ui/chart
     wait: true
     timeout: 300
     needs:
@@ -67,6 +67,6 @@ releases:
       - orders/orders
       - checkout/checkout
     values:
-      - src/ui/chart/values.yaml
-      - src/ui/chart/values-endpoints.yaml
-      - src/ui/chart/values-alb-ingress.yaml
+      - ../src/ui/chart/values.yaml
+      - ../src/ui/chart/values-endpoints.yaml
+      - ../src/ui/chart/values-alb-ingress.yaml
