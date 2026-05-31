@@ -1,7 +1,6 @@
 # Scenario: AWS EKS cluster — PVC-backed storage using gp2 StorageClass
 # StorageClass: gp2 (AWS EBS, provisioned by EKS)
-# UI: ClusterIP (use ALB Ingress or kubectl port-forward for access)
-# Run: helmfile -f helmfile/helmfile-eks.yaml apply
+# UI: ALB Ingress
 
 releases:
 
@@ -26,7 +25,7 @@ releases:
       - catalog/catalog
     values:
       - src/cart/chart/values.yaml
-      - src/cart/chart/values-dynamodb-local.yaml
+      - src/cart/chart/values-dynamodb-aws.yaml
 
   - name: orders
     namespace: orders
@@ -39,7 +38,7 @@ releases:
       - catalog/catalog
     values:
       - src/orders/chart/values.yaml
-      - src/orders/chart/values-04-postgresql-rabbitmq-pvc-eks.yaml
+      - src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml
 
   - name: checkout
     namespace: checkout
@@ -70,4 +69,4 @@ releases:
     values:
       - src/ui/chart/values.yaml
       - src/ui/chart/values-endpoints.yaml
-      - src/ui/chart/values-clusterip.yaml
+      - src/ui/chart/values-alb-ingress.yaml

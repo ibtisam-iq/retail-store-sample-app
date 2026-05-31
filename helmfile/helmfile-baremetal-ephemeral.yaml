@@ -1,7 +1,6 @@
 # Scenario: Bare-metal cluster — all services run in-memory (no PVC, no persistence)
 # Use case: fastest local spin-up, CI smoke tests, chart rendering validation
 # StorageClass: none required
-# Run: helmfile -f helmfile/helmfile-baremetal-ephemeral.yaml apply
 
 releases:
 
@@ -37,7 +36,7 @@ releases:
       - catalog/catalog
     values:
       - src/orders/chart/values.yaml
-      - src/orders/chart/values-01-postgresql-rabbitmq-ephemeral.yaml
+      - src/orders/chart/values-02-postgresql-ephemeral-msg-in-memory.yaml
 
   - name: checkout
     namespace: checkout

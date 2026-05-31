@@ -1,7 +1,6 @@
 # Scenario: Bare-metal cluster (k3s / kubeadm) — all stateful services use PVC
 # StorageClass: local-path (default on k3s)
 # Sequence: catalog → cart → orders → checkout → ui
-# Run: helmfile -f helmfile/helmfile-baremetal-persistent.yaml apply
 
 releases:
 
