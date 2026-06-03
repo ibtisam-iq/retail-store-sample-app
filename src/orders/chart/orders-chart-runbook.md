@@ -154,6 +154,7 @@ helm upgrade --install orders src/orders/chart/ \
 kubectl set env deployment/orders \
   RETAIL_ORDERS_MESSAGING_SQS_TOPIC=orders-events \
   -n orders  
+kubectl rollout restart deploy/orders -n orders
 
 # 6. Verify the orders deployment
 kubectl get pod -n orders
