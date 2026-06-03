@@ -2,6 +2,10 @@
 # Production-grade serverless messaging — no RabbitMQ pod to manage, EBS-backed DB.
 # Pre-requisite: SQS queue must exist; IRSA role must have sqs:SendMessage permission.
 
+serviceAccount:
+  create: false     # Reuse existing service account 
+  name: "orders"
+
 app:
   persistence:
     provider: postgresql
@@ -18,7 +22,3 @@ postgresql:
     enabled: true
     size: 10Gi
     storageClass: gp3
-
-serviceAccount:
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<SQS_IRSA_ROLE_NAME>

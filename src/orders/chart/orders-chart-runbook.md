@@ -100,13 +100,65 @@ kubectl describe pod -n orders -l app.kubernetes.io/name=orders
 ### Scenario 6 — PostgreSQL PVC (EKS gp3) + AWS SQS (IRSA)
 
 ```bash
-# Pre-requisite: SQS queue must exist; IRSA role must have sqs:SendMessage permission.
+# 1. Create SQS queue, and get the queue ARN for IAM role
+aws sqs create-queue --queue-name orders-events
+SQS_QUEUE_ARN=$(aws sqs get-queue-attributes \
+  --queue-url https://sqs.us-east-1.amazonaws.com/${ACCOUNT_ID}/orders-events \
+  --attribute-names QueueArn \
+  --query 'Attributes.QueueArn' \
+  --output text)
+echo $SQS_QUEUE_ARN
+
+# 2. Create IAM Policy for SQS
+cat > orders-sqs-policy.json <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllAPIActionsOnOrdersQueue",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:CreateQueue",
+        "sqs:SendMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+      ],
+      "Resource": "${SQS_QUEUE_ARN}"
+    }
+  ]
+}
+EOF
+
+aws iam create-policy \
+  --policy-name orders-sqs-policy \
+  --policy-document file://orders-sqs-policy.json
+
+# 3. Create IRSA and Bind to the Orders ServiceAccount
+eksctl create iamserviceaccount \
+  --cluster $CLUSTER_NAME \
+  --region $REGION \
+  --namespace orders \
+  --name orders \
+  --attach-policy-arn arn:aws:iam::${ACCOUNT_ID}:policy/orders-sqs-policy \
+  --role-name orders-to-sqs \
+  --approve \
+  --override-existing-serviceaccounts  
+
+# 4. Deploy orders service with PostgreSQL on gp3 EBS PVC (EKS) and AWS SQS messaging.
 helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values.yaml \
   -f src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml \
   --namespace orders --create-namespace
 
+# 5. Set env for the orders deployment
+kubectl set env deployment/orders \
+  RETAIL_ORDERS_MESSAGING_SQS_TOPIC=orders-events \
+  -n orders  
+
+# 6. Verify the orders deployment
 kubectl get pod -n orders
+kubectl get sa -n orders orders -o jsonpath='{.annotations.eks\.amazonaws\.com/role-arn}'
+kubectl exec -it deploy/orders -n orders -- env | grep RETAIL
 kubectl logs -n orders -l app.kubernetes.io/name=orders
 ```
 
