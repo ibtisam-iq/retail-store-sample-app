@@ -150,7 +150,7 @@ helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml \
   --namespace orders --create-namespace
 
-# 5. Set env for the orders deployment
+# 5. Patch the Missing Environment Variable
 kubectl set env deployment/orders \
   RETAIL_ORDERS_MESSAGING_SQS_TOPIC=orders-events \
   -n orders  
