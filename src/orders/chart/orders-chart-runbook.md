@@ -16,9 +16,9 @@ All values files are scoped to **database and messaging configuration**. Two ind
 | `values-01-in-memory.yaml` | `in-memory` | ✗ | ✗ | `in-memory` | ✗ | — |
 | `values-02-postgresql-ephemeral-msg-in-memory.yaml` | `postgres` | ✓ | ✗ | `in-memory` | ✗ | — |
 | `values-03-postgresql-rabbitmq-pvc-baremetal.yaml` | `postgres` | ✓ | ✓ | `rabbitmq` | ✓ | `local-path` |
-| `values-04-postgresql-rabbitmq-pvc-eks.yaml` | `postgres` | ✓ | ✓ | `rabbitmq` | ✓ | `gp2` |
+| `values-04-postgresql-rabbitmq-pvc-eks.yaml` | `postgres` | ✓ | ✓ | `rabbitmq` | ✓ | `gp3` |
 | `values-05-postgresql-rabbitmq-external.yaml` | `postgres` | ✗ | ✗ | `rabbitmq` | ✗ | — |
-| `values-06-postgresql-pvc-eks-sqs.yaml` | `postgres` | ✓ | ✓ | `sqs` | ✗ | `gp2` |
+| `values-06-postgresql-pvc-eks-sqs.yaml` | `postgres` | ✓ | ✓ | `sqs` | ✗ | `gp3` |
 
 > **DB endpoint auto-construction:** `app.persistence.endpoint` is only required when `postgresql.create: false` (external RDS). When `postgresql.create: true`, `_helpers.tpl` auto-constructs the endpoint as `<release>-orders-postgresql:<port>` — no manual value needed. `RETAIL_ORDERS_PERSISTENCE_ENDPOINT` is only injected into the ConfigMap when `provider: postgres`.
 
@@ -72,7 +72,7 @@ kubectl get pvc,pods,svc -n orders
 kubectl exec -n orders -it orders-postgresql-0 -- psql -U orders -d orders
 ```
 
-### Scenario 4 — PostgreSQL + RabbitMQ (EKS gp2 PVC)
+### Scenario 4 — PostgreSQL + RabbitMQ (EKS gp3 PVC)
 
 ```bash
 helm upgrade --install orders src/orders/chart/ \
@@ -97,7 +97,7 @@ kubectl get pod -n orders -l app.kubernetes.io/name=orders
 kubectl describe pod -n orders -l app.kubernetes.io/name=orders
 ```
 
-### Scenario 6 — PostgreSQL PVC (EKS gp2) + AWS SQS (IRSA)
+### Scenario 6 — PostgreSQL PVC (EKS gp3) + AWS SQS (IRSA)
 
 ```bash
 # Pre-requisite: SQS queue must exist; IRSA role must have sqs:SendMessage permission.
@@ -126,7 +126,7 @@ kubectl delete namespace orders
 | In-memory | No DB or messaging dependency; all data lost on pod restart |
 | PostgreSQL ephemeral | PostgreSQL pod created alongside orders; data lost on pod restart |
 | PostgreSQL + RabbitMQ (bare-metal) | Both PVCs bound to `local-path`; data and messages persisted across restarts |
-| PostgreSQL + RabbitMQ (EKS) | Both PVCs bound to `gp2` EBS volumes; data and messages persisted across restarts |
+| PostgreSQL + RabbitMQ (EKS) | Both PVCs bound to `gp3` EBS volumes; data and messages persisted across restarts |
 | External RDS + External RabbitMQ | No StatefulSet created; `endpoint` and `addresses` must be set explicitly in the overlay |
 | PostgreSQL + SQS (EKS) | No RabbitMQ pod; IRSA injects AWS credentials — no Secret needed for SQS auth |
 | DB endpoint auto-build | When `postgresql.create: true`, chart builds `RETAIL_ORDERS_PERSISTENCE_ENDPOINT` as `<release>-orders-postgresql:5432` automatically via `_helpers.tpl` |

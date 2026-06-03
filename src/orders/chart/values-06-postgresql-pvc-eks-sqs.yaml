@@ -1,4 +1,4 @@
-# Deployed the orders service with PostgreSQL on gp2 EBS PVC (EKS) and AWS SQS messaging.
+# Deployed the orders service with PostgreSQL on gp3 EBS PVC (EKS) and AWS SQS messaging.
 # Production-grade serverless messaging — no RabbitMQ pod to manage, EBS-backed DB.
 # Pre-requisite: SQS queue must exist; IRSA role must have sqs:SendMessage permission.
 
@@ -17,7 +17,7 @@ postgresql:
   persistentVolume:
     enabled: true
     size: 10Gi
-    storageClass: gp2
+    storageClass: gp3
 
 serviceAccount:
   annotations:
