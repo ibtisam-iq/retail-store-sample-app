@@ -5,7 +5,7 @@ app:
   persistence:
     provider: dynamodb
     dynamodb:
-      tableName: Items
+      tableName: cart
       createTable: true
 
 dynamodb:

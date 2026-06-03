@@ -38,9 +38,12 @@ kubectl get pods,svc -n cart
 ```
 
 ### Scenario 3 — AWS DynamoDB (EKS + IAM)
+
+Refer to: https://nectar.ibtisam-iq.com/cloud-infrastructure/aws/dynamodb/#23-creating-a-dynamodb-table-via-aws-cli-
+
 ```bash
-# Pre-requisite: DynamoDB table "Items" must exist in the target region.
-# Pod IAM access via IRSA (annotate serviceAccount) or node instance profile.
+# 1. Pre-requisite: DynamoDB table "cart" must exist in the target region.
+# 2. Pod IAM access via IRSA (annotate serviceAccount) or node instance profile.
 helm upgrade --install cart src/cart/chart/ \
   -f src/cart/chart/values.yaml \
   -f src/cart/chart/values-dynamodb-aws.yaml \
