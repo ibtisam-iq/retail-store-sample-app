@@ -24,6 +24,8 @@ helm upgrade --install cart src/cart/chart/ \
   -f src/cart/chart/values-in-memory.yaml \
   --namespace cart --create-namespace
 
+sleep 15
+
 kubectl get pods -n cart
 ```
 
@@ -33,6 +35,8 @@ helm upgrade --install cart src/cart/chart/ \
   -f src/cart/chart/values.yaml \
   -f src/cart/chart/values-dynamodb-local.yaml \
   --namespace cart --create-namespace
+
+sleep 15
 
 kubectl get pods,svc -n cart
 ```
@@ -48,6 +52,8 @@ helm upgrade --install cart src/cart/chart/ \
   -f src/cart/chart/values.yaml \
   -f src/cart/chart/values-dynamodb-aws.yaml \
   --namespace cart --create-namespace
+
+sleep 15
 
 kubectl get pod -n cart
 kubectl logs -n cart -l app.kubernetes.io/name=carts

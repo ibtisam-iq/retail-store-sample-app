@@ -24,6 +24,8 @@ helm upgrade --install checkout src/checkout/chart/ \
   --set app.endpoints.orders="http://orders.orders.svc.cluster.local" \
   --namespace checkout --create-namespace
 
+sleep 15
+
 kubectl get pods -n checkout
 ```
 
@@ -34,6 +36,8 @@ helm upgrade --install checkout src/checkout/chart/ \
   -f src/checkout/chart/values-redis-local.yaml \
   --set app.endpoints.orders="http://orders.orders.svc.cluster.local" \
   --namespace checkout --create-namespace
+
+sleep 15
 
 kubectl get pods,svc -n checkout
 kubectl exec -n checkout deploy/checkout -- env | grep -i order
@@ -48,6 +52,8 @@ helm upgrade --install checkout src/checkout/chart/ \
   --set app.endpoints.orders="http://orders.orders.svc.cluster.local" \
   --namespace checkout --create-namespace
 
+sleep 15
+
 kubectl get pod -n checkout
 kubectl logs -n checkout -l app.kubernetes.io/name=checkout
 ```
@@ -59,6 +65,8 @@ helm upgrade --install checkout src/checkout/chart/ \
   -f src/checkout/chart/values-redis-tls.yaml \
   --set app.endpoints.orders="http://orders.orders.svc.cluster.local" \
   --namespace checkout --create-namespace
+
+sleep 15
 
 kubectl get pod -n checkout
 ```

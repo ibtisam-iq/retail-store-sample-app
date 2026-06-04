@@ -20,5 +20,5 @@ postgresql:
   create: true
   persistentVolume:
     enabled: true
-    size: 10Gi
+    size: 1Gi
     storageClass: gp3

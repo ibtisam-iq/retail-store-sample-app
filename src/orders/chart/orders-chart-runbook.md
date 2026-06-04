@@ -44,6 +44,8 @@ helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values-01-in-memory.yaml \
   --namespace orders --create-namespace
 
+sleep 15
+
 kubectl get pods -n orders
 ```
 
@@ -54,6 +56,8 @@ helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values.yaml \
   -f src/orders/chart/values-02-postgresql-ephemeral-msg-in-memory.yaml \
   --namespace orders --create-namespace
+
+sleep 15
 
 kubectl get pods,svc -n orders
 kubectl exec -n orders -it orders-postgresql-0 -- psql -U orders -d orders
@@ -66,6 +70,8 @@ helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values.yaml \
   -f src/orders/chart/values-03-postgresql-rabbitmq-pvc-baremetal.yaml \
   --namespace orders --create-namespace
+
+sleep 15
 
 kubectl get sc
 kubectl get pvc,pods,svc -n orders
@@ -80,6 +86,8 @@ helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values-04-postgresql-rabbitmq-pvc-eks.yaml \
   --namespace orders --create-namespace
 
+sleep 15
+
 kubectl get sc
 kubectl get pvc,pods,svc -n orders
 kubectl exec -n orders -it orders-postgresql-0 -- psql -U orders -d orders
@@ -92,6 +100,8 @@ helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values.yaml \
   -f src/orders/chart/values-05-postgresql-rabbitmq-external.yaml \
   --namespace orders --create-namespace
+
+sleep 15
 
 kubectl get pod -n orders -l app.kubernetes.io/name=orders
 kubectl describe pod -n orders -l app.kubernetes.io/name=orders
@@ -150,13 +160,15 @@ helm upgrade --install orders src/orders/chart/ \
   -f src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml \
   --namespace orders --create-namespace
 
+sleep 5
+
 # 5. Patch the Missing Environment Variable
 kubectl set env deployment/orders \
   RETAIL_ORDERS_MESSAGING_SQS_TOPIC=orders-events \
   -n orders  
 kubectl rollout restart deploy/orders -n orders
 
-sleep 30
+sleep 15
 
 # 6. Verify the orders deployment
 kubectl get pod -n orders

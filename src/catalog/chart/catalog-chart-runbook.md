@@ -41,6 +41,8 @@ helm upgrade --install catalog src/catalog/chart/ \
   -f src/catalog/chart/values-in-memory.yaml \
   --namespace catalog --create-namespace
 
+sleep 15
+
 kubectl get pods -n catalog
 ```
 
@@ -51,6 +53,8 @@ helm upgrade --install catalog src/catalog/chart/ \
   -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-mysql-ephemeral.yaml \
   --namespace catalog --create-namespace
+
+sleep 15
 
 kubectl get pods,svc -n catalog
 kubectl exec -n catalog -it catalog-mysql-0 -- mysql -u catalog -pcatalog123 catalog
@@ -63,6 +67,8 @@ helm upgrade --install catalog src/catalog/chart/ \
   -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-mysql-pvc-baremetal.yaml \
   --namespace catalog --create-namespace
+
+sleep 15
 
 kubectl get sc
 kubectl get pvc,pods,svc -n catalog
@@ -77,6 +83,8 @@ helm upgrade --install catalog src/catalog/chart/ \
   -f src/catalog/chart/values-mysql-pvc-eks.yaml \
   --namespace catalog --create-namespace
 
+sleep 15
+
 kubectl get sc
 kubectl get pvc,pods,svc -n catalog
 kubectl exec -n catalog -it catalog-mysql-0 -- mysql -u catalog -pcatalog123 catalog
@@ -89,6 +97,8 @@ helm upgrade --install catalog src/catalog/chart/ \
   -f src/catalog/chart/values.yaml \
   -f src/catalog/chart/values-external-mysql.yaml \
   --namespace catalog --create-namespace
+
+sleep 15
 
 kubectl get pod -n catalog -l app.kubernetes.io/name=catalog
 kubectl describe pod -n catalog -l app.kubernetes.io/name=catalog

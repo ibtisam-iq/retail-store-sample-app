@@ -57,6 +57,8 @@ helm upgrade --install ui src/ui/chart/ \
   -f src/ui/chart/values-clusterip.yaml \
   --namespace ui --create-namespace
 
+sleep 15
+
 kubectl get pods -n ui
 kubectl port-forward svc/ui 8080:80 -n ui
 # Access: http://localhost:8080
@@ -71,6 +73,9 @@ helm upgrade --install ui src/ui/chart/ \
   -f src/ui/chart/values-nodeport.yaml \
   --namespace ui --create-namespace
 
+sleep 15
+
+kubectl get pods -n ui
 kubectl get svc -n ui
 # Access: http://<node-ip>:30080
 ```
@@ -84,6 +89,9 @@ helm upgrade --install ui src/ui/chart/ \
   -f src/ui/chart/values-loadbalancer.yaml \
   --namespace ui --create-namespace
 
+sleep 15
+
+kubectl get pods -n ui
 kubectl get svc -n ui -w   # Wait for EXTERNAL-IP
 # Access: http://<EXTERNAL-IP>
 ```
@@ -91,14 +99,16 @@ kubectl get svc -n ui -w   # Wait for EXTERNAL-IP
 ### Scenario 4 — ALB Ingress (EKS)
 
 ```bash
-# Pre-requisite: AWS Load Balancer Controller installed in the cluster.
-# Replace <YOUR_DOMAIN_OR_ALB_DNS> in values-alb-ingress.yaml before running.
+# Replace <paste $CERT_ARN here> in values-alb-ingress.yaml before running.
 helm upgrade --install ui src/ui/chart/ \
   -f src/ui/chart/values.yaml \
   -f src/ui/chart/values-endpoints.yaml \
   -f src/ui/chart/values-alb-ingress.yaml \
   --namespace ui --create-namespace
 
+sleep 15
+
+kubectl get pods -n ui
 kubectl get ingress -n ui -w   # Wait for ADDRESS
 ```
 
