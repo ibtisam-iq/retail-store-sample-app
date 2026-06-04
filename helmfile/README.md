@@ -8,12 +8,22 @@ Each file encodes a specific infrastructure scenario. Pick the one that matches 
 ```bash
 # Install helmfile (if not already installed)
 brew install helmfile        # macOS
+
 # or
-curl -fsSL https://github.com/helmfile/helmfile/releases/latest/download/helmfile_linux_amd64.tar.gz | tar xz
-sudo mv helmfile /usr/local/bin/
+
+helmfile_version=1.5.2
+linux_arch=amd64
+curl -L https://github.com/helmfile/helmfile/releases/download/v${helmfile_version}/helmfile_${helmfile_version}_linux_${linux_arch}.tar.gz -o /tmp/helmfile.tar.gz
+tar -xzf /tmp/helmfile.tar.gz -C /tmp
+sudo mv /tmp/helmfile /usr/local/bin/
+sudo chmod +x /usr/local/bin/helmfile
+rm /tmp/helmfile.tar.gz
 
 # Verify
 helmfile --version
+
+# Install helm-diff plugin
+helm plugin install https://github.com/databus23/helm-diff
 ```
 
 ## Scenarios
