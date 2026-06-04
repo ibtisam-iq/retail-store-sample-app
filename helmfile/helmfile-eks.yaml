@@ -13,7 +13,7 @@ releases:
     timeout: 300
     values:
       - ../src/catalog/chart/values.yaml
-      - src/catalog/chart/values-mysql-pvc-eks.yaml
+      - ../src/catalog/chart/values-mysql-pvc-eks.yaml
 
   - name: cart
     namespace: cart
