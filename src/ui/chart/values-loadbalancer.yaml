@@ -1,6 +1,10 @@
-# Deployed the UI service with LoadBalancer type to provision a cloud NLB (EKS/GKE/AKS).
-# On EKS this creates an AWS Network Load Balancer automatically.
+# Deploys the UI service as an internet-facing AWS Network Load Balancer on EKS.
+# Without the annotations below, EKS defaults to an internal NLB — EXTERNAL-IP stays <pending>.
 
 service:
   type: LoadBalancer
   port: 80
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip" 

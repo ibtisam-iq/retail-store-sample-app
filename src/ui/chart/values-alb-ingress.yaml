@@ -1,5 +1,6 @@
-# Deployed the UI service with an AWS ALB Ingress using the AWS Load Balancer Controller.
-# Exposes the UI on HTTP/80 via internet-facing ALB; requires ALB controller installed in cluster.
+# Deploys the UI service as an internet-facing AWS ALB Ingress on EKS.
+# Exposes the UI on HTTPS/443; requires ALB controller installed in cluster.
+# HTTPS uses ACM certificate; ALB handles SSL termination and forwards plain HTTP to the pod.
 
 service:
   type: ClusterIP
@@ -7,10 +8,16 @@ service:
 
 ingress:
   enabled: true
-  className: alb
+  className: "alb"
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/healthcheck-path: /actuator/health/liveness
+    alb.ingress.kubernetes.io/certificate-arn: "<paste $CERT_ARN here>"
+    alb.ingress.kubernetes.io/group.name: ecom-eks
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}, {"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+  tls: []
   hosts:
-    - "<YOUR_DOMAIN_OR_ALB_DNS>"
+    - "retail-microservices.ibtisam-iq.com"
