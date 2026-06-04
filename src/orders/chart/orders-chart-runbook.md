@@ -156,9 +156,11 @@ kubectl set env deployment/orders \
   -n orders  
 kubectl rollout restart deploy/orders -n orders
 
+sleep 30
+
 # 6. Verify the orders deployment
 kubectl get pod -n orders
-kubectl get sa -n orders orders -o jsonpath='{.annotations.eks\.amazonaws\.com/role-arn}'
+kubectl get sa -n orders orders -o yaml
 kubectl exec -it deploy/orders -n orders -- env | grep RETAIL
 kubectl logs -n orders -l app.kubernetes.io/name=orders
 ```
