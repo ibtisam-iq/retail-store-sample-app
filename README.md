@@ -1,180 +1,235 @@
-![Banner](./docs/images/banner.png)
+# Retail Store Sample App — DevOps Engineering
 
-<div align="center">
-  <div align="center">
+> **Authorship Notice:** I did not write this application from scratch. The source code across all five services (`src/`) was originally developed by the [AWS Containers](https://github.com/aws-containers/retail-store-sample-app) team as an educational reference for container-based architectures on AWS. As a DevOps / Platform Engineer, my work begins where the application code ends — understanding the architecture, studying the Helm charts, authoring environment-specific `values-*.yaml` overrides and runbooks for each service, orchestrating multi-service deployments with Helmfile, and validating the full stack via Terraform-provisioned infrastructure.
 
-[![Stars](https://img.shields.io/github/stars/aws-containers/retail-store-sample-app)](Stars)
-![GitHub License](https://img.shields.io/github/license/aws-containers/retail-store-sample-app?color=green)
-![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Faws-containers%2Fretail-store-sample-app%2Frefs%2Fheads%2Fmain%2F.release-please-manifest.json&query=%24%5B%22.%22%5D&label=release)
-![GitHub Release Date](https://img.shields.io/github/release-date/aws-containers/retail-store-sample-app)
+---
 
-  </div>
+## Table of Contents
 
-  <strong>
-  <h2>AWS Containers Retail Sample</h2>
-  </strong>
-</div>
+- [Application Architecture](#application-architecture)
+- [Step 0 — Architecture Comprehension](#step-0--architecture-comprehension)
+- [Step 1 — Per-Service Helm Chart Deployment](#step-1--per-service-helm-chart-deployment)
+  - [UI](#-ui-service)
+  - [Catalog](#-catalog-service)
+  - [Cart](#-cart-service)
+  - [Orders](#-orders-service)
+  - [Checkout](#-checkout-service)
+- [Step 2 — Helmfile Unified Deployment](#step-2--helmfile-unified-deployment)
+- [Step 3 — Terraform Infrastructure Deployment](#step-3--terraform-infrastructure-deployment)
 
-This is a sample application designed to illustrate various concepts related to containers on AWS. It presents a sample retail store application including a product catalog, shopping cart and checkout.
-
-It provides:
-
-- A demo store-front application with themes, pages to show container and application topology information, generative AI chat bot and utility functions for experimentation and demos.
-- An optional distributed component architecture using various languages and frameworks
-- A variety of different persistence backends for the various components like MariaDB (or MySQL), DynamoDB and Redis
-- The ability to run in different container orchestration technologies like Docker Compose, Kubernetes etc.
-- Pre-built container images for both x86-64 and ARM64 CPU architectures
-- All components instrumented for Prometheus metrics and OpenTelemetry OTLP tracing
-- Support for Istio on Kubernetes
-- Load generator which exercises all of the infrastructure
-
-See the [features documentation](./docs/features.md) for more information.
-
-**This project is intended for educational purposes only and not for production use**
-
-![Screenshot](/docs/images/screenshot.png)
+---
 
 ## Application Architecture
 
-The application has been deliberately over-engineered to generate multiple de-coupled components. These components generally have different infrastructure dependencies, and may support multiple "backends" (example: Carts service supports MongoDB or DynamoDB).
+This is a deliberately over-engineered microservices retail store — five independent services, each written in a different language, each with its own persistence backend. The complexity is intentional: it mirrors the kind of heterogeneous stack you encounter in real-world platform engineering.
 
-![Architecture](/docs/images/architecture.png)
+![Architecture](./docs/images/architecture.png)
 
-| Component                  | Language | Container Image                                                             | Helm Chart                                                                        | Description                             |
-| -------------------------- | -------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------- |
-| [UI](./src/ui/)            | Java     | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-ui)       | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-ui-chart)       | Store user interface                    |
-| [Catalog](./src/catalog/)  | Go       | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-catalog)  | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-catalog-chart)  | Product catalog API                     |
-| [Cart](./src/cart/)        | Java     | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-cart)     | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-cart-chart)     | User shopping carts API                 |
-| [Orders](./src/orders)     | Java     | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-orders)   | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-orders-chart)   | User orders API                         |
-| [Checkout](./src/checkout) | Node     | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-checkout) | [Link](https://gallery.ecr.aws/aws-containers/retail-store-sample-checkout-chart) | API to orchestrate the checkout process |
+| Service | Language | Role | Database(s) | Depends On |
+|---|---|---|---|---|
+| [UI](./src/ui/) | Java | Store frontend — routes all user traffic | None | Catalog, Cart, Orders, Checkout |
+| [Catalog](./src/catalog/) | Go | Product catalog REST API | MySQL / MariaDB | None |
+| [Cart](./src/cart/) | Java | Shopping cart state management | DynamoDB (local or AWS) / In-memory | Catalog |
+| [Orders](./src/orders/) | Java | Order processing and persistence | PostgreSQL + RabbitMQ or SQS | Cart, Checkout |
+| [Checkout](./src/checkout/) | Node.js | Checkout orchestration | Redis (local, TLS, or ElastiCache) | Orders |
 
-## Quickstart
+> Pre-built container images for both `x86-64` and `ARM64` are available on [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-containers).
 
-The following sections provide quickstart instructions for various platforms.
+---
 
-### Docker
+## Step 0 — Architecture Comprehension
 
-This deployment method will run the application as a single container on your local machine using `docker`.
+Before writing a single line of deployment configuration, I studied the codebase and its Helm charts thoroughly. This step is non-negotiable — deploying something you do not understand is not DevOps, it is guesswork.
 
-Pre-requisites:
+**What I mapped out:**
 
-- Docker installed locally
+- How many services exist and what each one does
+- Which programming language each service is written in
+- Which database(s) each service can connect to (some support multiple backends)
+- Which services depend on other services and in what direction
+- The structure of every `chart/` folder under `src/<service>/`
+- The base `values.yaml` for each chart — what is exposed, what is hardcoded, what is configurable
 
-Run the container:
+This comprehension work directly informed the environment-specific `values-*.yaml` files authored in Step 1.
+
+---
+
+## Step 1 — Per-Service Helm Chart Deployment
+
+Each service ships with its own Helm chart under `src/<service>/chart/`. The upstream chart provides a base `values.yaml`, but deploying across three different target environments — **Local Cluster**, **Bare-metal Kubernetes**, and **AWS EKS** — requires environment-specific overrides. I authored those override files and a runbook for each service.
+
+**Three deployment targets:**
+
+| # | Target | Characteristics |
+|---|---|---|
+| 1 | **Local Cluster** | Kind / Minikube; no persistent storage; in-memory or containerized dependencies |
+| 2 | **Bare-metal Kubernetes** | Self-managed nodes; PVC-backed storage; in-cluster databases |
+| 3 | **AWS EKS** | Managed node groups; AWS-managed services (RDS, DynamoDB, ElastiCache, SQS, ALB) |
+
+---
+
+### 🖥️ UI Service
+
+The UI is the only internet-facing service. Its Helm chart controls how it is exposed — the `values-*.yaml` files here are primarily about **service type and ingress strategy**, not databases.
+
+| File | Purpose | Target |
+|---|---|---|
+| [`values-nodeport.yaml`](./src/ui/chart/values-nodeport.yaml) | Expose via NodePort | Local Cluster / Bare-metal |
+| [`values-clusterip.yaml`](./src/ui/chart/values-clusterip.yaml) | ClusterIP only (internal) | All (when fronted by Ingress) |
+| [`values-loadbalancer.yaml`](./src/ui/chart/values-loadbalancer.yaml) | Cloud LoadBalancer service | AWS EKS (NLB) |
+| [`values-alb-ingress.yaml`](./src/ui/chart/values-alb-ingress.yaml) | AWS ALB Ingress Controller | AWS EKS |
+| [`values-endpoints.yaml`](./src/ui/chart/values-endpoints.yaml) | Kubernetes Endpoints object for external routing | Mixed / Advanced |
+| [`values-chat-bedrock.yaml`](./src/ui/chart/values-chat-bedrock.yaml) | Enable AI chat via AWS Bedrock | AWS EKS |
+| [`values-chat-openai.yaml`](./src/ui/chart/values-chat-openai.yaml) | Enable AI chat via OpenAI API | Any |
+
+📖 [UI Chart Runbook](./src/ui/chart/ui-chart-runbook.md)
+
+---
+
+### 📦 Catalog Service
+
+Catalog is a Go REST API backed by MySQL. The override files cover the full spectrum from no database at all (in-memory) to a fully external managed RDS instance.
+
+| File | Database Mode | Target |
+|---|---|---|
+| [`values-in-memory.yaml`](./src/catalog/chart/values-in-memory.yaml) | No MySQL; in-memory data | Local Cluster |
+| [`values-mysql-ephemeral.yaml`](./src/catalog/chart/values-mysql-ephemeral.yaml) | MySQL deployed in-cluster, no PVC | Local Cluster |
+| [`values-mysql-pvc-baremetal.yaml`](./src/catalog/chart/values-mysql-pvc-baremetal.yaml) | MySQL with PVC (bare-metal StorageClass) | Bare-metal Kubernetes |
+| [`values-mysql-pvc-eks.yaml`](./src/catalog/chart/values-mysql-pvc-eks.yaml) | MySQL with PVC (EBS StorageClass) | AWS EKS |
+| [`values-external-mysql.yaml`](./src/catalog/chart/values-external-mysql.yaml) | External MySQL / RDS endpoint | AWS EKS / Any |
+
+📖 [Catalog Chart Runbook](./src/catalog/chart/catalog-chart-runbook.md)
+
+---
+
+### 🛒 Cart Service
+
+Cart is a Java service that can run with zero external dependencies (in-memory mode) or connect to DynamoDB — either the AWS-managed service or a containerized local replica.
+
+| File | Database Mode | Target |
+|---|---|---|
+| [`values-in-memory.yaml`](./src/cart/chart/values-in-memory.yaml) | No DynamoDB; in-memory cart state | Local Cluster |
+| [`values-dynamodb-local.yaml`](./src/cart/chart/values-dynamodb-local.yaml) | DynamoDB Local (containerized) | Local Cluster / Bare-metal |
+| [`values-dynamodb-aws.yaml`](./src/cart/chart/values-dynamodb-aws.yaml) | AWS DynamoDB (managed service) | AWS EKS |
+
+📖 [Cart Chart Runbook](./src/cart/chart/cart-chart-runbook.md)
+
+---
+
+### 📋 Orders Service
+
+Orders is the most complex service — it depends on both a relational database (PostgreSQL) and a message broker (RabbitMQ or AWS SQS). The override files here reflect the highest number of deployment permutations in the stack.
+
+| File | Database | Message Broker | Storage | Target |
+|---|---|---|---|---|
+| [`values-01-in-memory.yaml`](./src/orders/chart/values-01-in-memory.yaml) | In-memory | In-memory | None | Local Cluster |
+| [`values-02-postgresql-ephemeral-msg-in-memory.yaml`](./src/orders/chart/values-02-postgresql-ephemeral-msg-in-memory.yaml) | PostgreSQL (ephemeral) | In-memory | None | Local Cluster |
+| [`values-03-postgresql-rabbitmq-pvc-baremetal.yaml`](./src/orders/chart/values-03-postgresql-rabbitmq-pvc-baremetal.yaml) | PostgreSQL + PVC | RabbitMQ | Bare-metal PVC | Bare-metal Kubernetes |
+| [`values-04-postgresql-rabbitmq-pvc-eks.yaml`](./src/orders/chart/values-04-postgresql-rabbitmq-pvc-eks.yaml) | PostgreSQL + PVC | RabbitMQ | EBS PVC | AWS EKS |
+| [`values-05-postgresql-rabbitmq-external.yaml`](./src/orders/chart/values-05-postgresql-rabbitmq-external.yaml) | External PostgreSQL | External RabbitMQ | None | AWS EKS / Any |
+| [`values-06-postgresql-pvc-eks-sqs.yaml`](./src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml) | PostgreSQL + PVC | AWS SQS | EBS PVC | AWS EKS |
+
+> The numbered prefix (`01-`, `02-`, ...) on Orders files is intentional — it communicates a recommended progression from simplest to most production-like, making it easy to validate each layer before adding the next dependency.
+
+📖 [Orders Chart Runbook](./src/orders/chart/orders-chart-runbook.md)
+
+---
+
+### 💳 Checkout Service
+
+Checkout is a Node.js service that uses Redis as a session/state store. The overrides cover the full range from no Redis at all to TLS-encrypted connections and AWS ElastiCache.
+
+| File | Redis Mode | Target |
+|---|---|---|
+| [`values-in-memory.yaml`](./src/checkout/chart/values-in-memory.yaml) | No Redis; in-memory state | Local Cluster |
+| [`values-redis-local.yaml`](./src/checkout/chart/values-redis-local.yaml) | Redis deployed in-cluster | Local Cluster / Bare-metal |
+| [`values-redis-tls.yaml`](./src/checkout/chart/values-redis-tls.yaml) | Redis with TLS enabled | Bare-metal / EKS |
+| [`values-redis-aws-elasticache.yaml`](./src/checkout/chart/values-redis-aws-elasticache.yaml) | AWS ElastiCache (managed Redis) | AWS EKS |
+
+📖 [Checkout Chart Runbook](./src/checkout/chart/checkout-chart-runbook.md)
+
+---
+
+## Step 2 — Helmfile Unified Deployment
+
+Deploying five services independently with `helm install` per service is workable for learning, but operationally fragile. In this step I introduced [Helmfile](https://helmfile.readthedocs.io/) to declare all five releases in a single file, resolve their ordering, and deploy or teardown the entire stack with one command.
+
+Three Helmfile configurations were authored, one per deployment target:
+
+| File | Target | Storage | Message Broker |
+|---|---|---|---|
+| [`helmfile-baremetal-ephemeral.yaml`](./helmfile/helmfile-baremetal-ephemeral.yaml) | Bare-metal Kubernetes | Ephemeral (no PVC) | In-memory |
+| [`helmfile-baremetal-persistent.yaml`](./helmfile/helmfile-baremetal-persistent.yaml) | Bare-metal Kubernetes | PVC-backed | RabbitMQ |
+| [`helmfile-eks.yaml`](./helmfile/helmfile-eks.yaml) | AWS EKS | EBS PVC + AWS services | RabbitMQ / SQS |
+
+Each Helmfile references the per-service `values-*.yaml` files authored in Step 1 — it is not a standalone configuration, it is an orchestration layer on top of the existing override files.
+
+📖 [Helmfile README](./helmfile/README.md)
+
+**Deploy the full stack (example — bare-metal persistent):**
+
+```bash
+helmfile -f helmfile/helmfile-baremetal-persistent.yaml apply
+```
+
+**Teardown:**
+
+```bash
+helmfile -f helmfile/helmfile-baremetal-persistent.yaml destroy
+```
+
+---
+
+## Step 3 — Terraform Infrastructure Deployment
+
+The upstream repository ships Terraform modules for provisioning and deploying the full stack on AWS-managed compute. I used these scripts to validate end-to-end deployment from infrastructure provisioning through application availability.
+
+| Module | Target | AWS Services Used |
+|---|---|---|
+| [`terraform/eks/`](./terraform/eks/) | Amazon EKS | EKS, RDS (MySQL/PostgreSQL), DynamoDB, ElastiCache, SQS, ALB |
+| [`terraform/ecs/`](./terraform/ecs/) | Amazon ECS (Fargate) | ECS, RDS, DynamoDB, ElastiCache, SQS, ALB |
+| [`terraform/apprunner/`](./terraform/apprunner/) | AWS App Runner | App Runner, RDS, DynamoDB, ElastiCache |
+
+> These Terraform modules are authored by the AWS Containers team. My contribution in this step was execution, validation, and observing how the infrastructure choices map back to the Helm chart override files I authored in Steps 1 and 2.
+
+**Basic workflow (EKS example):**
+
+```bash
+cd terraform/eks/default
+
+terraform init
+terraform plan
+terraform apply
+```
+
+Destroy all resources when done:
+
+```bash
+terraform destroy
+```
+
+---
+
+## Repository Layout
 
 ```
-docker run -it --rm -p 8888:8080 public.ecr.aws/aws-containers/retail-store-sample-ui:1.0.0
+retail-store-sample-app/
+├── src/
+│   ├── ui/chart/               # UI Helm chart + values overrides + runbook
+│   ├── catalog/chart/          # Catalog Helm chart + values overrides + runbook
+│   ├── cart/chart/             # Cart Helm chart + values overrides + runbook
+│   ├── orders/chart/           # Orders Helm chart + values overrides + runbook
+│   └── checkout/chart/         # Checkout Helm chart + values overrides + runbook
+├── helmfile/                   # Helmfile configs for all 3 deployment targets
+├── terraform/
+│   ├── eks/                    # EKS deployment (default + minimal)
+│   ├── ecs/                    # ECS deployment
+│   └── apprunner/              # App Runner deployment
+└── docs/                       # Architecture diagrams, feature documentation
 ```
 
-Open the frontend in a browser window:
-
-```
-http://localhost:8888
-```
-
-To stop the container in `docker` use Ctrl+C.
-
-### Docker Compose
-
-This deployment method will run the application on your local machine using `docker-compose`.
-
-Pre-requisites:
-
-- Docker installed locally
-
-Download the latest Docker Compose file and use `docker compose` to run the application containers:
-
-```
-wget https://github.com/aws-containers/retail-store-sample-app/releases/latest/download/docker-compose.yaml
-
-DB_PASSWORD='<some password>' docker compose --file docker-compose.yaml up
-```
-
-Open the frontend in a browser window:
-
-```
-http://localhost:8888
-```
-
-To stop the containers in `docker compose` use Ctrl+C. To delete all the containers and related resources run:
-
-```
-docker compose -f docker-compose.yaml down
-```
-
-### Kubernetes
-
-This deployment method will run the application in an existing Kubernetes cluster.
-
-Pre-requisites:
-
-- Kubernetes cluster
-- `kubectl` installed locally
-
-Use `kubectl` to run the application:
-
-```
-kubectl apply -f https://github.com/aws-containers/retail-store-sample-app/releases/latest/download/kubernetes.yaml
-kubectl wait --for=condition=available deployments --all
-```
-
-Get the URL for the frontend load balancer like so:
-
-```
-kubectl get svc ui
-```
-
-To remove the application use `kubectl` again:
-
-```
-kubectl delete -f https://github.com/aws-containers/retail-store-sample-app/releases/latest/download/kubernetes.yaml
-```
-
-### Terraform
-
-The following options are available to deploy the application using Terraform:
-
-| Name                                             | Description                                                                                                     |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| [Amazon EKS](./terraform/eks/default/)           | Deploys the application to Amazon EKS using other AWS services for dependencies, such as RDS, DynamoDB etc.     |
-| [Amazon EKS (Minimal)](./terraform/eks/minimal/) | Deploys the application to Amazon EKS using in-cluster dependencies instead of RDS, DynamoDB etc.               |
-| [Amazon ECS](./terraform/ecs/default/)           | Deploys the application to Amazon ECS using other AWS services for dependencies, such as RDS, DynamoDB etc.     |
-| [AWS App Runner](./terraform/apprunner/)         | Deploys the application to AWS App Runner using other AWS services for dependencies, such as RDS, DynamoDB etc. |
-
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+---
 
 ## License
 
-This project is licensed under the MIT-0 License.
-
-This package depends on and may incorporate or retrieve a number of third-party
-software packages (such as open source packages) at install-time or build-time
-or run-time ("External Dependencies"). The External Dependencies are subject to
-license terms that you must accept in order to use this package. If you do not
-accept all of the applicable license terms, you should not use this package. We
-recommend that you consult your company’s open source approval policy before
-proceeding.
-
-Provided below is a list of External Dependencies and the applicable license
-identification as indicated by the documentation associated with the External
-Dependencies as of Amazon's most recent review.
-
-THIS INFORMATION IS PROVIDED FOR CONVENIENCE ONLY. AMAZON DOES NOT PROMISE THAT
-THE LIST OR THE APPLICABLE TERMS AND CONDITIONS ARE COMPLETE, ACCURATE, OR
-UP-TO-DATE, AND AMAZON WILL HAVE NO LIABILITY FOR ANY INACCURACIES. YOU SHOULD
-CONSULT THE DOWNLOAD SITES FOR THE EXTERNAL DEPENDENCIES FOR THE MOST COMPLETE
-AND UP-TO-DATE LICENSING INFORMATION.
-
-YOUR USE OF THE EXTERNAL DEPENDENCIES IS AT YOUR SOLE RISK. IN NO EVENT WILL
-AMAZON BE LIABLE FOR ANY DAMAGES, INCLUDING WITHOUT LIMITATION ANY DIRECT,
-INDIRECT, CONSEQUENTIAL, SPECIAL, INCIDENTAL, OR PUNITIVE DAMAGES (INCLUDING
-FOR ANY LOSS OF GOODWILL, BUSINESS INTERRUPTION, LOST PROFITS OR DATA, OR
-COMPUTER FAILURE OR MALFUNCTION) ARISING FROM OR RELATING TO THE EXTERNAL
-DEPENDENCIES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY OF LIABILITY, EVEN
-IF AMAZON HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. THESE LIMITATIONS
-AND DISCLAIMERS APPLY EXCEPT TO THE EXTENT PROHIBITED BY APPLICABLE LAW.
-
-MariaDB Community License - [LICENSE](https://mariadb.com/kb/en/mariadb-licenses/)
-MySQL Community Edition - [LICENSE](https://github.com/mysql/mysql-server/blob/8.0/LICENSE)
+The original application and Terraform modules are licensed under the [MIT-0 License](https://github.com/aws-containers/retail-store-sample-app/blob/main/LICENSE) by Amazon Web Services. All DevOps additions in this fork (values overrides, runbooks, Helmfile configurations) are authored by [Muhammad Ibtisam Iqbal](https://github.com/ibtisam-iq).
