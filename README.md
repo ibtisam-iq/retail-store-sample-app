@@ -55,40 +55,45 @@ Each service ships with its own Helm chart under `src/<service>/chart/`, includi
 
 This application was built by AWS primarily for EKS. Extending it to bare-metal Kubernetes is deliberate — it validates environment-agnostic chart design and exercises the full range of platform engineering decisions around storage classes, service exposure, and managed vs. self-hosted dependencies.
 
-> Files marked ✱ are referenced by the Helmfile configurations in Step 2. Each service has a dedicated runbook (linked in the table) containing per-scenario `helm` commands, validation steps, and observed behaviour.
+> Files marked ✱ are referenced by the Helmfile configurations in Step 2. Each service has a dedicated runbook (last row of each block) with per-scenario `helm` commands, validation steps, and observed behaviour.
 
-| Service | Values Override File | Target |
+| | Values Override File | Target |
 |---|---|---|
-| **UI** | [`values-nodeport.yaml`](./src/ui/chart/values-nodeport.yaml) ✱ | Bare-metal / Local |
+| **UI** | | |
+| | [`values-endpoints.yaml`](./src/ui/chart/values-endpoints.yaml) ✱ | All — mandatory companion |
+| | [`values-nodeport.yaml`](./src/ui/chart/values-nodeport.yaml) ✱ | Bare-metal / Local |
 | | [`values-clusterip.yaml`](./src/ui/chart/values-clusterip.yaml) | All (port-forward) |
 | | [`values-loadbalancer.yaml`](./src/ui/chart/values-loadbalancer.yaml) | EKS — NLB |
 | | [`values-alb-ingress.yaml`](./src/ui/chart/values-alb-ingress.yaml) ✱ | EKS — ALB Ingress |
-| | [`values-endpoints.yaml`](./src/ui/chart/values-endpoints.yaml) ✱ | All (mandatory companion — wires backend service URLs) |
-| | [`values-chat-bedrock.yaml`](./src/ui/chart/values-chat-bedrock.yaml) | EKS — AI chat via AWS Bedrock |
-| | [`values-chat-openai.yaml`](./src/ui/chart/values-chat-openai.yaml) | Any — AI chat via OpenAI-compatible API |
-| | 📖 [UI Chart Runbook](./src/ui/chart/ui-chart-runbook.md) — scenario matrix, per-scenario `helm` commands, combining exposure + chat axes, teardown | |
-| **Catalog** | [`values-in-memory.yaml`](./src/catalog/chart/values-in-memory.yaml) | Local |
+| | [`values-chat-bedrock.yaml`](./src/ui/chart/values-chat-bedrock.yaml) | EKS — AWS Bedrock |
+| | [`values-chat-openai.yaml`](./src/ui/chart/values-chat-openai.yaml) | Any — OpenAI-compatible |
+| | 📖 [UI Chart Runbook](./src/ui/chart/ui-chart-runbook.md) | scenario matrix · per-scenario commands · exposure + chat axes · teardown |
+| **Catalog** | | |
+| | [`values-in-memory.yaml`](./src/catalog/chart/values-in-memory.yaml) | Local |
 | | [`values-mysql-ephemeral.yaml`](./src/catalog/chart/values-mysql-ephemeral.yaml) ✱ | Bare-metal — ephemeral |
 | | [`values-mysql-pvc-baremetal.yaml`](./src/catalog/chart/values-mysql-pvc-baremetal.yaml) ✱ | Bare-metal — persistent |
 | | [`values-mysql-pvc-eks.yaml`](./src/catalog/chart/values-mysql-pvc-eks.yaml) ✱ | EKS — EBS PVC |
 | | [`values-external-mysql.yaml`](./src/catalog/chart/values-external-mysql.yaml) | EKS — RDS endpoint |
-| | 📖 [Catalog Chart Runbook](./src/catalog/chart/catalog-chart-runbook.md) — per-scenario `helm` commands, MySQL connectivity validation, teardown | |
-| **Cart** | [`values-in-memory.yaml`](./src/cart/chart/values-in-memory.yaml) | Local |
-| | [`values-dynamodb-local.yaml`](./src/cart/chart/values-dynamodb-local.yaml) ✱ | Bare-metal / Local — DynamoDB Local container |
-| | [`values-dynamodb-aws.yaml`](./src/cart/chart/values-dynamodb-aws.yaml) ✱ | EKS — AWS DynamoDB via IRSA |
-| | 📖 [Cart Chart Runbook](./src/cart/chart/cart-chart-runbook.md) — per-scenario `helm` commands, DynamoDB table validation, teardown | |
-| **Orders** | [`values-01-in-memory.yaml`](./src/orders/chart/values-01-in-memory.yaml) | Local — zero external dependencies |
+| | 📖 [Catalog Chart Runbook](./src/catalog/chart/catalog-chart-runbook.md) | per-scenario commands · MySQL connectivity validation · teardown |
+| **Cart** | | |
+| | [`values-in-memory.yaml`](./src/cart/chart/values-in-memory.yaml) | Local |
+| | [`values-dynamodb-local.yaml`](./src/cart/chart/values-dynamodb-local.yaml) ✱ | Bare-metal / Local |
+| | [`values-dynamodb-aws.yaml`](./src/cart/chart/values-dynamodb-aws.yaml) ✱ | EKS — AWS DynamoDB (IRSA) |
+| | 📖 [Cart Chart Runbook](./src/cart/chart/cart-chart-runbook.md) | per-scenario commands · DynamoDB table validation · teardown |
+| **Orders** | | |
+| | [`values-01-in-memory.yaml`](./src/orders/chart/values-01-in-memory.yaml) | Local — zero dependencies |
 | | [`values-02-postgresql-ephemeral-msg-in-memory.yaml`](./src/orders/chart/values-02-postgresql-ephemeral-msg-in-memory.yaml) ✱ | Bare-metal — ephemeral |
 | | [`values-03-postgresql-rabbitmq-pvc-baremetal.yaml`](./src/orders/chart/values-03-postgresql-rabbitmq-pvc-baremetal.yaml) ✱ | Bare-metal — persistent |
 | | [`values-04-postgresql-rabbitmq-pvc-eks.yaml`](./src/orders/chart/values-04-postgresql-rabbitmq-pvc-eks.yaml) | EKS — RabbitMQ + EBS PVC |
 | | [`values-05-postgresql-rabbitmq-external.yaml`](./src/orders/chart/values-05-postgresql-rabbitmq-external.yaml) | EKS — fully external endpoints |
 | | [`values-06-postgresql-pvc-eks-sqs.yaml`](./src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml) ✱ | EKS — AWS SQS + EBS PVC |
-| | 📖 [Orders Chart Runbook](./src/orders/chart/orders-chart-runbook.md) — per-scenario `helm` commands, numbered progression rationale, PostgreSQL + broker validation, teardown | |
-| **Checkout** | [`values-in-memory.yaml`](./src/checkout/chart/values-in-memory.yaml) | Local |
-| | [`values-redis-local.yaml`](./src/checkout/chart/values-redis-local.yaml) ✱ | Bare-metal / Local — in-cluster Redis |
+| | 📖 [Orders Chart Runbook](./src/orders/chart/orders-chart-runbook.md) | per-scenario commands · numbered progression rationale · broker validation · teardown |
+| **Checkout** | | |
+| | [`values-in-memory.yaml`](./src/checkout/chart/values-in-memory.yaml) | Local |
+| | [`values-redis-local.yaml`](./src/checkout/chart/values-redis-local.yaml) ✱ | Bare-metal / Local |
 | | [`values-redis-tls.yaml`](./src/checkout/chart/values-redis-tls.yaml) | Any — Redis with TLS |
-| | [`values-redis-aws-elasticache.yaml`](./src/checkout/chart/values-redis-aws-elasticache.yaml) | EKS — AWS ElastiCache |
-| | 📖 [Checkout Chart Runbook](./src/checkout/chart/checkout-chart-runbook.md) — per-scenario `helm` commands, Redis connectivity validation, TLS configuration, teardown | |
+| | [`values-redis-aws-elasticache.yaml`](./src/checkout/chart/values-redis-aws-elasticache.yaml) | EKS — ElastiCache |
+| | 📖 [Checkout Chart Runbook](./src/checkout/chart/checkout-chart-runbook.md) | per-scenario commands · Redis connectivity · TLS configuration · teardown |
 
 ---
 
