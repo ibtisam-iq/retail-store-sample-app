@@ -54,7 +54,9 @@ All work in this repository was done on infrastructure I provisioned myself — 
 
 ### Bare-metal Kubernetes
 
-I hold a lifetime premium membership on [iximiuz Labs](https://labs.iximiuz.com/a/ibtisam-iq), a platform that lets to author and publish custom micro-VM playgrounds. I have built and published a family of these under the **SilverStack** name — each a purpose-built Ubuntu 24.04 micro-VM with a specific tool stack pre-installed and pre-wired. For all bare-metal work, I used the [SilverStack Dev Machine](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) — a fully provisioned DevOps workstation with every required tool already available, zero setup needed on my end.
+I hold a lifetime premium membership on [iximiuz Labs](https://labs.iximiuz.com/a/ibtisam-iq), a platform that lets to author and publish custom micro-VM playgrounds. I have built and published a family of these under the **SilverStack** name — each a purpose-built Ubuntu 24.04 micro-VM with a specific tool stack pre-installed and pre-wired. 
+
+For all bare-metal work, I used the [SilverStack Dev Machine](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) — a fully provisioned DevOps workstation with every required tool already available, zero setup needed on my end.
 
 On top of that machine, I provisioned a multi-node kubeadm cluster using my own bootstrap script:
 
