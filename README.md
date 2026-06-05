@@ -8,6 +8,7 @@
 
 - [Application Architecture](#application-architecture)
 - [Step 0 — Architecture Comprehension](#step-0--architecture-comprehension)
+- [Lab Environment](#lab-environment)
 - [Step 1 — Per-Service Helm Chart Deployment](#step-1--per-service-helm-chart-deployment)
 - [Step 2 — Helmfile Unified Deployment](#step-2--helmfile-unified-deployment)
 - [Step 3 — Terraform Infrastructure Deployment](#step-3--terraform-infrastructure-deployment)
@@ -44,6 +45,26 @@ Before writing a single line of deployment configuration, I studied the codebase
 - The base `values.yaml` for each chart — what is exposed, what is hardcoded, what is configurable
 
 This comprehension work directly informed every `values-*.yaml` file authored in Step 1.
+
+---
+
+## Lab Environment
+
+This project was validated end-to-end on two distinct infrastructure targets — both provisioned from scratch, not pre-baked cloud sandboxes.
+
+### Bare-metal Kubernetes — kubeadm on SilverStack
+
+The bare-metal cluster was provisioned on my custom rootfs playground [SilverStack](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) using a single bootstrap command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ibtisam-iq/silver-stack/main/scripts/kubernetes/entrypoints/init-controlplane.sh | sudo bash
+```
+
+This script automates the full kubeadm control-plane setup — container runtime, CNI, and cluster init in one pass. The complete breakdown of every step this script executes is documented in the [Cluster Bootstrap Runbook](https://runbook.ibtisam-iq.com/bootstrap/kubernetes/cluster-kubeadm/).
+
+### AWS EKS — Terraform on KodeKloud Playground
+
+The EKS target was provisioned via Terraform on the [KodeKloud AWS Playground](https://learn.kodekloud.com/user/playgrounds/playground-aws). Third-party sandboxed AWS environments impose constraints that don't exist in a real AWS account — restricted IAM permissions, limited service quotas, ephemeral credentials. Navigating these required targeted workarounds, all of which are documented in the [EKS on KodeKloud Playground Runbook](https://runbook.ibtisam-iq.com/iac/terraform/provisioning/eks-on-kodekloud-aws-playground/).
 
 ---
 
