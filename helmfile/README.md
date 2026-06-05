@@ -32,7 +32,7 @@ helm plugin install https://github.com/databus23/helm-diff
 |------|---------|---------|-----------|----------|
 | `helmfile-baremetal-persistent.yaml` | k3s / kubeadm | `local-path` PVC | NodePort `:30080` | Durable local testing |
 | `helmfile-baremetal-ephemeral.yaml` | k3s / kubeadm | None (in-memory) | NodePort `:30080` | Fast spin-up, CI smoke tests |
-| `helmfile-eks.yaml` | AWS EKS | `gp2` EBS PVC | ClusterIP + port-forward | EKS validation |
+| `helmfile-eks.yaml` | AWS EKS | `gp3` EBS PVC | ClusterIP + port-forward | EKS validation |
 
 ## Commands
 
@@ -43,7 +43,7 @@ helmfile -f helmfile/helmfile-baremetal-persistent.yaml apply
 # Bare-metal — ephemeral (fastest, no PVC needed)
 helmfile -f helmfile/helmfile-baremetal-ephemeral.yaml apply
 
-# EKS — gp2 StorageClass
+# EKS — gp3 StorageClass
 helmfile -f helmfile/helmfile-eks.yaml apply
 ```
 

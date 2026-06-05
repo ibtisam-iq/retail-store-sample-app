@@ -1,5 +1,5 @@
-# Scenario: AWS EKS cluster — PVC-backed storage using gp2 StorageClass
-# StorageClass: gp2 (AWS EBS, provisioned by EKS)
+# Scenario: AWS EKS cluster — PVC-backed storage using gp3 StorageClass
+# StorageClass: gp3 (AWS EBS, provisioned by EKS)
 # UI: ALB Ingress
 
 releases:
