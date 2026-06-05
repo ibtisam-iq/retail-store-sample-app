@@ -51,13 +51,15 @@ This comprehension work directly informed every `values-*.yaml` file authored in
 
 Each service ships with its own Helm chart under `src/<service>/chart/`, including a base `values.yaml`. I studied that base file for each service, then authored additional `values-*.yaml` overrides on top of it — one per deployment scenario — so that the same chart could be deployed across three different target environments without modifying the chart itself.
 
+> The table below lists the key override files per service. Each service runbook (last row) documents the complete values file set, per-scenario `helm` commands, validation steps, and teardown.
+
 | [Catalog](./src/catalog/chart/) | [Cart](./src/cart/chart/) | [Orders](./src/orders/chart/) | [Checkout](./src/checkout/chart/) | [UI](./src/ui/chart/) |
 |---|---|---|---|---|
 | [`values-mysql-ephemeral.yaml`](./src/catalog/chart/values-mysql-ephemeral.yaml) | [`values-dynamodb-local.yaml`](./src/cart/chart/values-dynamodb-local.yaml) | [`values-postgresql-ephemeral-msg-in-memory.yaml`](./src/orders/chart/values-02-postgresql-ephemeral-msg-in-memory.yaml) | [`values-redis-local.yaml`](./src/checkout/chart/values-redis-local.yaml) | [`values-clusterip.yaml`](./src/ui/chart/values-clusterip.yaml) |
 | [`values-mysql-pvc-baremetal.yaml`](./src/catalog/chart/values-mysql-pvc-baremetal.yaml) | [`values-dynamodb-aws.yaml`](./src/cart/chart/values-dynamodb-aws.yaml) | [`values-postgresql-rabbitmq-pvc-baremetal.yaml`](./src/orders/chart/values-03-postgresql-rabbitmq-pvc-baremetal.yaml) | [`values-redis-tls.yaml`](./src/checkout/chart/values-redis-tls.yaml) | [`values-nodeport.yaml`](./src/ui/chart/values-nodeport.yaml) |
 | [`values-mysql-pvc-eks.yaml`](./src/catalog/chart/values-mysql-pvc-eks.yaml) | | [`values-postgresql-rabbitmq-pvc-eks.yaml`](./src/orders/chart/values-04-postgresql-rabbitmq-pvc-eks.yaml) | [`values-redis-aws-elasticache.yaml`](./src/checkout/chart/values-redis-aws-elasticache.yaml) | [`values-loadbalancer.yaml`](./src/ui/chart/values-loadbalancer.yaml) |
 | [`values-external-mysql.yaml`](./src/catalog/chart/values-external-mysql.yaml) | | [`values-postgresql-rabbitmq-external.yaml`](./src/orders/chart/values-05-postgresql-rabbitmq-external.yaml) | | [`values-alb-ingress.yaml`](./src/ui/chart/values-alb-ingress.yaml) |
-| | | [`values-postgresql-pvc-eks-sqs.yaml`](./src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml) | |
+| | | [`values-postgresql-pvc-eks-sqs.yaml`](./src/orders/chart/values-06-postgresql-pvc-eks-sqs.yaml) | | |
 | 📖 [Catalog Runbook](./src/catalog/chart/catalog-chart-runbook.md) | 📖 [Cart Runbook](./src/cart/chart/cart-chart-runbook.md) | 📖 [Orders Runbook](./src/orders/chart/orders-chart-runbook.md) | 📖 [Checkout Runbook](./src/checkout/chart/checkout-chart-runbook.md) | 📖 [UI Runbook](./src/ui/chart/ui-chart-runbook.md) |
 
 ---
