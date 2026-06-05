@@ -50,21 +50,30 @@ This comprehension work directly informed every `values-*.yaml` file authored in
 
 ## Lab Environment
 
-This project was validated end-to-end on two distinct infrastructure targets — both provisioned from scratch, not pre-baked cloud sandboxes.
+All work in this repository was done on infrastructure I provisioned myself — no local VM, no personal AWS account, no pre-configured cloud instance.
 
-### Bare-metal Kubernetes — kubeadm on SilverStack
+### Bare-metal Kubernetes
 
-The bare-metal cluster was provisioned on my custom rootfs playground [SilverStack](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) using a single bootstrap command:
+I hold a lifetime premium membership on [iximiuz Labs](https://labs.iximiuz.com/a/ibtisam-iq), a platform that lets you author and publish custom micro-VM playgrounds. I have built and published a family of these under the **SilverStack** name — each a purpose-built Ubuntu 24.04 micro-VM with a specific tool stack pre-installed and pre-wired. For all bare-metal work, I used the [SilverStack Dev Machine](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) — a fully provisioned DevOps workstation with every required tool already available, zero setup needed on my end.
+
+On top of that machine, I provisioned a multi-node kubeadm cluster using my own bootstrap script:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ibtisam-iq/silver-stack/main/scripts/kubernetes/entrypoints/init-controlplane.sh | sudo bash
 ```
 
-This script automates the full kubeadm control-plane setup — container runtime, CNI, and cluster init in one pass. The complete breakdown of every step this script executes is documented in the [Cluster Bootstrap Runbook](https://runbook.ibtisam-iq.com/bootstrap/kubernetes/cluster-kubeadm/).
+Every step this script automates — container runtime installation, CNI setup, kubeadm init, and post-install configuration — is documented in the [Cluster Bootstrap Runbook](https://runbook.ibtisam-iq.com/bootstrap/kubernetes/cluster-kubeadm/).
 
-### AWS EKS — Terraform on KodeKloud Playground
+### AWS EKS
 
-The EKS target was provisioned via Terraform on the [KodeKloud AWS Playground](https://learn.kodekloud.com/user/playgrounds/playground-aws). Third-party sandboxed AWS environments impose constraints that don't exist in a real AWS account — restricted IAM permissions, limited service quotas, ephemeral credentials. Navigating these required targeted workarounds, all of which are documented in the [EKS on KodeKloud Playground Runbook](https://runbook.ibtisam-iq.com/iac/terraform/provisioning/eks-on-kodekloud-aws-playground/).
+For EKS validation, I used the [KodeKloud AWS Playground](https://learn.kodekloud.com/user/playgrounds/playground-aws) (annual membership) rather than a personal AWS account. This is a sandboxed environment with restricted IAM permissions and limited service quotas — you cannot simply run `terraform apply` and expect a clean EKS cluster. I hit real provisioning constraints and worked through each one. Everything I encountered and how I resolved it is documented in the [EKS on KodeKloud Playground Runbook](https://runbook.ibtisam-iq.com/iac/terraform/provisioning/eks-on-kodekloud-aws-playground/).
+
+| | Bare-metal | EKS |
+|---|---|---|
+| **Platform** | [iximiuz Labs](https://labs.iximiuz.com/a/ibtisam-iq) — lifetime premium | [KodeKloud AWS Playground](https://learn.kodekloud.com/user/playgrounds/playground-aws) — annual membership |
+| **Machine** | [SilverStack Dev Machine](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) — custom micro-VM, all tools pre-installed | Sandboxed AWS account — restricted IAM, limited quotas |
+| **Cluster** | kubeadm — provisioned via my own bootstrap script | EKS — provisioned via Terraform |
+| **Runbook** | [Cluster Bootstrap Runbook](https://runbook.ibtisam-iq.com/bootstrap/kubernetes/cluster-kubeadm/) | [EKS on KodeKloud Runbook](https://runbook.ibtisam-iq.com/iac/terraform/provisioning/eks-on-kodekloud-aws-playground/) |
 
 ---
 
