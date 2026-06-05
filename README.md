@@ -54,7 +54,7 @@ All work in this repository was done on infrastructure I provisioned myself — 
 
 ### Bare-metal Kubernetes
 
-I hold a lifetime premium membership on [iximiuz Labs](https://labs.iximiuz.com/a/ibtisam-iq), a platform that lets you author and publish custom micro-VM playgrounds. I have built and published a family of these under the **SilverStack** name — each a purpose-built Ubuntu 24.04 micro-VM with a specific tool stack pre-installed and pre-wired. For all bare-metal work, I used the [SilverStack Dev Machine](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) — a fully provisioned DevOps workstation with every required tool already available, zero setup needed on my end.
+I hold a lifetime premium membership on [iximiuz Labs](https://labs.iximiuz.com/a/ibtisam-iq), a platform that lets to author and publish custom micro-VM playgrounds. I have built and published a family of these under the **SilverStack** name — each a purpose-built Ubuntu 24.04 micro-VM with a specific tool stack pre-installed and pre-wired. For all bare-metal work, I used the [SilverStack Dev Machine](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) — a fully provisioned DevOps workstation with every required tool already available, zero setup needed on my end.
 
 On top of that machine, I provisioned a multi-node kubeadm cluster using my own bootstrap script:
 
@@ -66,7 +66,9 @@ Every step this script automates — container runtime installation, CNI setup, 
 
 ### AWS EKS
 
-For EKS validation, I used the [KodeKloud AWS Playground](https://learn.kodekloud.com/user/playgrounds/playground-aws) (annual membership) rather than a personal AWS account. This is a sandboxed environment with restricted IAM permissions and limited service quotas — you cannot simply run `terraform apply` and expect a clean EKS cluster. I hit real provisioning constraints and worked through each one. Everything I encountered and how I resolved it is documented in the [EKS on KodeKloud Playground Runbook](https://runbook.ibtisam-iq.com/iac/terraform/provisioning/eks-on-kodekloud-aws-playground/).
+For EKS validation, I used the [KodeKloud AWS Playground](https://learn.kodekloud.com/user/playgrounds/playground-aws) (annual membership) rather than my personal AWS account. This is a sandboxed environment with restricted IAM permissions and limited service quotas — it doesn't allow to just simply run `terraform apply` and expect a clean EKS cluster. 
+
+I hit real provisioning constraints and worked through each one. Everything I encountered and how I resolved it is documented in the [EKS on KodeKloud Playground Runbook](https://runbook.ibtisam-iq.com/iac/terraform/provisioning/eks-on-kodekloud-aws-playground/).
 
 | | Bare-metal | EKS |
 |---|---|---|
