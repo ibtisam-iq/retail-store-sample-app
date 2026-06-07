@@ -125,6 +125,37 @@ helmfile -f helmfile/helmfile-baremetal-persistent.yaml apply
 helmfile -f helmfile/helmfile-eks.yaml apply
 ```
 
+> **Note — Where these commands run:**
+> 
+> The ephemeral and persistent Helmfiles validated on a kubeadm cluster provisioned via my own bootstrap script on the [SilverStack Dev Machine](https://labs.iximiuz.com/playgrounds/SilverStack-dev-machine-e672bcf7) (iximiuz Labs). These two Helmfiles are not bare-metal-exclusive — they run on any Kubernetes cluster where the referenced `values-*.yaml` assumptions hold (kubeadm, EKS, GKE).
+>
+> The EKS Helmfile is different. A single command runs the entire application:
+>
+> ```
+> helmfile -f helmfile/helmfile-eks.yaml apply
+> ```
+>
+> But that single command only works after an entire AWS infrastructure stack has been built correctly — IAM roles, OIDC, self-managed worker nodes, EBS CSI driver, ALB Ingress Controller, DynamoDB, SQS, ACM certificate. This is not just a `helm install` situation; it is a full platform engineering exercise.
+>
+> Rather than bloating this README with 10 phases of AWS infrastructure work, I documented every step in a dedicated runbook — from the first `terraform apply` to the final `curl` validation:
+>
+> **📖 [Retail Microservices on EKS — Full Runbook](https://runbook.ibtisam-iq.com/projects/retail-microservices-on-eks/)**
+
+### What the EKS Runbook Covers
+
+| Phase | What Was Done |
+|---|---|
+| **Phase 1 — IAM Roles** | `eksClusterRole` + `eksNodeRole` provisioned via Terraform to work around `iam:PassRole` restriction in the lab IAM user |
+| **Phase 2 — EKS Control Plane** | Cluster created via `eksctl` with `cluster.yaml`; OIDC associated manually post-creation |
+| **Phase 3 — Worker Nodes** | Self-managed nodes bootstrapped via the official AWS CloudFormation node template; joined via `aws-auth` ConfigMap |
+| **Phase 4 — EKS Add-ons** | AWS Load Balancer Controller (IRSA + Helm); EBS CSI Driver (addon + IRSA annotation); `gp3` set as default StorageClass |
+| **Phase 5 — TLS Certificate** | ACM certificate requested for `retail-microservices.ibtisam-iq.com`; DNS-validated via Cloudflare |
+| **Phase 6 — AWS App Resources** | DynamoDB table + IRSA for Cart; SQS queue + IRSA for Orders; SNS topic + Lambda for order notification emails |
+| **Phase 7 — Helmfile Deploy** | All five services deployed with `helmfile -f helmfile/helmfile-eks.yaml apply`; PVCs bound on `gp3`; ALB provisioned; HTTPS live |
+| **Phase 8 — Monitoring** | `kube-prometheus-stack` deployed; Grafana + Prometheus exposed via ALB Ingress on the same ALB group |
+| **Phase 9 — Log Shipping** | Fluent Bit DaemonSet deployed; CloudWatch Container Insights log groups created for application, dataplane, and host logs |
+| **Phase 10 — Validation** | End-to-end: ALB target groups healthy, HTTP→HTTPS redirect verified, TLS certificate confirmed, DNS resolved |
+
 **Teardown:**
 
 ```bash
