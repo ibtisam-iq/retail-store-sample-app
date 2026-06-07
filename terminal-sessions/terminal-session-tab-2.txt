@@ -1,0 +1,101 @@
+ibtisam@dev-machine:~ $ export CERT_ARN=$(aws acm request-certificate \
+  --domain-name retail-microservices.ibtisam-iq.com \
+  --validation-method DNS \
+  --region us-east-1 \
+  --query 'CertificateArn' \
+  --output text)
+
+echo $CERT_ARN
+# arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+arn:aws:acm:us-east-1:730335615031:certificate/f0afb980-b86d-47cd-beaf-e8494affd00a
+
+ibtisam@dev-machine:~ $ aws acm describe-certificate \
+  --certificate-arn $CERT_ARN \
+  --region us-east-1 \
+  --query 'Certificate.DomainValidationOptions[0].ResourceRecord'
+{
+    "Name": "_ab1c5499789efdc982a79ac4fa03a4ee.retail-microservices.ibtisam-iq.com.",
+    "Type": "CNAME",
+    "Value": "_9d76931dd1cbceac5d14293b7463ce92.jkddzztszm.acm-validations.aws."
+}
+
+ibtisam@dev-machine:~ $ # Blocks until certificate status = ISSUED (usually 1–5 minutes)
+aws acm wait certificate-validated \
+  --certificate-arn $CERT_ARN \
+  --region us-east-1
+
+# Verify
+aws acm describe-certificate \
+  --certificate-arn $CERT_ARN \
+  --region us-east-1 \
+  --query 'Certificate.Status'
+# "ISSUED" ✅
+"ISSUED"
+
+ibtisam@dev-machine:~ $ cat retail-store-sample-app/src/ui/chart/values-alb-ingress.yaml 
+# Deploys the UI service as an internet-facing AWS ALB Ingress on EKS.
+# Exposes the UI on HTTPS/443; requires ALB controller installed in cluster.
+# HTTPS uses ACM certificate; ALB handles SSL termination and forwards plain HTTP to the pod.
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health/liveness
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:730335615031:certificate/f0afb980-b86d-47cd-beaf-e8494affd00a"
+    alb.ingress.kubernetes.io/group.name: ecom-eks
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}, {"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+  tls: []
+  hosts:
+    - "retail-microservices.ibtisam-iq.com"
+
+ibtisam@dev-machine:~ $ echo "cert-arn added."
+cert-arn added.
+
+ibtisam@dev-machine:~ $ k get ns monitoring 
+NAME         STATUS   AGE
+monitoring   Active   62s
+
+ibtisam@dev-machine:~ $ k get po -n monitoring 
+NAME                                                     READY   STATUS    RESTARTS   AGE
+alertmanager-prometheus-stack-kube-prom-alertmanager-0   2/2     Running   0          63s
+prometheus-prometheus-stack-kube-prom-prometheus-0       2/2     Running   0          63s
+prometheus-stack-grafana-f85f7f555-hk9f2                 3/3     Running   0          67s
+prometheus-stack-kube-prom-operator-5846b5ddcc-5qgf8     1/1     Running   0          67s
+prometheus-stack-kube-state-metrics-bc7cc7c7f-c8qkq      1/1     Running   0          67s
+prometheus-stack-prometheus-node-exporter-q22hz          1/1     Running   0          67s
+prometheus-stack-prometheus-node-exporter-rgs7c          1/1     Running   0          67s
+prometheus-stack-prometheus-node-exporter-whnrj          1/1     Running   0          67s
+
+ibtisam@dev-machine:~ $ k get po -n monitoring 
+NAME                                                     READY   STATUS    RESTARTS   AGE
+alertmanager-prometheus-stack-kube-prom-alertmanager-0   2/2     Running   0          7m13s
+prometheus-prometheus-stack-kube-prom-prometheus-0       1/2     Running   0          14s
+prometheus-stack-grafana-7d4cdb7cd8-97wvs                2/3     Running   0          22s
+prometheus-stack-grafana-f85f7f555-hk9f2                 3/3     Running   0          7m17s
+prometheus-stack-kube-prom-operator-5846b5ddcc-5qgf8     1/1     Running   0          7m17s
+prometheus-stack-kube-state-metrics-bc7cc7c7f-c8qkq      1/1     Running   0          7m17s
+prometheus-stack-prometheus-node-exporter-q22hz          1/1     Running   0          7m17s
+prometheus-stack-prometheus-node-exporter-rgs7c          1/1     Running   0          7m17s
+prometheus-stack-prometheus-node-exporter-whnrj          1/1     Running   0          7m17s
+
+ibtisam@dev-machine:~ $ k get po -n monitoring 
+NAME                                                     READY   STATUS    RESTARTS   AGE
+alertmanager-prometheus-stack-kube-prom-alertmanager-0   2/2     Running   0          8m17s
+prometheus-prometheus-stack-kube-prom-prometheus-0       2/2     Running   0          78s
+prometheus-stack-grafana-7d4cdb7cd8-97wvs                3/3     Running   0          86s
+prometheus-stack-kube-prom-operator-5846b5ddcc-5qgf8     1/1     Running   0          8m21s
+prometheus-stack-kube-state-metrics-bc7cc7c7f-c8qkq      1/1     Running   0          8m21s
+prometheus-stack-prometheus-node-exporter-q22hz          1/1     Running   0          8m21s
+prometheus-stack-prometheus-node-exporter-rgs7c          1/1     Running   0          8m21s
+prometheus-stack-prometheus-node-exporter-whnrj          1/1     Running   0          8m21s
+
+ibtisam@dev-machine:~ $ 

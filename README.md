@@ -156,6 +156,13 @@ helmfile -f helmfile/helmfile-eks.yaml apply
 | **Phase 9 — Log Shipping** | Fluent Bit DaemonSet deployed; CloudWatch Container Insights log groups created for application, dataplane, and host logs |
 | **Phase 10 — Validation** | End-to-end: ALB target groups healthy, HTTP→HTTPS redirect verified, TLS certificate confirmed, DNS resolved |
 
+### Terminal Session Recordings
+
+The complete, unedited terminal output from the actual deployment is preserved here for reference — every command run, every response received, from first login to `helmfile apply` completion.
+
+| Tab 1 | Primary session — all deployment work from IAM roles through `helmfile apply` and monitoring stack | [`terminal-sessions/terminal-session-tab-1.txt`](./terminal-sessions/terminal-session-tab-1.txt) |
+| Tab 2 | Secondary session — opened in parallel during cluster creation; ACM certificate request + a few verification commands | [`terminal-sessions/terminal-session-tab-2.txt`](./terminal-sessions/terminal-session-tab-2.txt) |
+
 **Teardown:**
 
 ```bash
