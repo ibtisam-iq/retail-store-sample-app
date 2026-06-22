@@ -139,7 +139,7 @@ helmfile -f helmfile/helmfile-eks.yaml apply
 >
 > Rather than bloating this README with 10 phases of AWS infrastructure work, I documented every step in a dedicated runbook — from the first `terraform apply` to the final `curl` validation:
 >
-> **📖 [Retail Microservices on EKS — Full Runbook](https://runbook.ibtisam-iq.com/projects/retail-microservices-on-eks/)**
+> **📖 [Retail Microservices on EKS — Full Runbook](https://runbook.ibtisam-iq.com/projects/deployments/retail-store-sample-app/)**
 
 ### What the EKS Runbook Covers
 
@@ -169,36 +169,6 @@ The complete, unedited terminal output from the actual deployment is preserved h
 
 ```bash
 helmfile -f helmfile/helmfile-eks.yaml destroy
-```
-
----
-
-## Step 3 — Terraform Infrastructure Deployment
-
-The upstream repository ships Terraform modules for provisioning and deploying the full stack on AWS-managed compute. I used these scripts to validate end-to-end deployment from infrastructure provisioning through application availability.
-
-| Module | Target | AWS Services Used |
-|---|---|---|
-| [`terraform/eks/`](./terraform/eks/) | Amazon EKS | EKS, RDS (MySQL/PostgreSQL), DynamoDB, ElastiCache, SQS, ALB |
-| [`terraform/ecs/`](./terraform/ecs/) | Amazon ECS (Fargate) | ECS, RDS, DynamoDB, ElastiCache, SQS, ALB |
-| [`terraform/apprunner/`](./terraform/apprunner/) | AWS App Runner | App Runner, RDS, DynamoDB, ElastiCache |
-
-> These Terraform modules are authored by the AWS Containers team. My contribution in this step was execution, validation, and observing how the infrastructure choices map back to the Helm chart override files authored in Steps 1 and 2.
-
-**Basic workflow (EKS example):**
-
-```bash
-cd terraform/eks/default
-
-terraform init
-terraform plan
-terraform apply
-```
-
-**Destroy all resources when done:**
-
-```bash
-terraform destroy
 ```
 
 ---
